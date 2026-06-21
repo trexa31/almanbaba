@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aşk Acısı | TrexA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --midnight: #0a0e17;
+            --deep-blue: #0d1525;
+            --ocean: #1a2332;
+            --gold: #c9a96e;
+            --gold-light: #e8d5a3;
+            --silver: #8b9dc3;
+            --white: #f0f2f5;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.06);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--midnight);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: var(--white);
+        }
+
+        /* Animated Background */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-gradient {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(26, 35, 50, 0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(13, 21, 37, 0.9) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.05) 0%, transparent 40%);
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--gold);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float-particle linear infinite;
+        }
+
+        @keyframes float-particle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        /* Rain Effect */
+        .rain-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .rain-drop {
+            position: absolute;
+            width: 1px;
+            height: 15px;
+            background: linear-gradient(to bottom, transparent, rgba(139, 157, 195, 0.3));
+            animation: rain-fall linear infinite;
+        }
+
+        @keyframes rain-fall {
+            0% { transform: translateY(-20px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* Main Content */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Logo Section */
+        .logo-section {
+            margin-bottom: 40px;
+            animation: fade-in-down 1.5s ease-out;
+        }
+
+        @keyframes fade-in-down {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-wrapper {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 25px;
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201, 169, 110, 0.15) 0%, transparent 70%);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+        }
+
+        .logo-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            border: 1px solid rgba(201, 169, 110, 0.2);
+            border-radius: 50%;
+            animation: spin-slow 20s linear infinite;
+        }
+
+        .logo-ring::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 1px solid rgba(201, 169, 110, 0.1);
+            border-radius: 50%;
+            animation: spin-slow 15s linear infinite reverse;
+        }
+
+        @keyframes spin-slow {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .logo-img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(201, 169, 110, 0.4);
+            box-shadow: 
+                0 0 30px rgba(201, 169, 110, 0.2),
+                0 0 60px rgba(201, 169, 110, 0.1),
+                inset 0 0 30px rgba(0,0,0,0.3);
+            transition: all 0.5s ease;
+        }
+
+        .logo-img:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 
+                0 0 40px rgba(201, 169, 110, 0.3),
+                0 0 80px rgba(201, 169, 110, 0.15);
+        }
+
+        /* Founder Card */
+        .founder-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 50px 60px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: fade-in-up 1.5s ease-out 0.3s both;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .founder-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.5;
+        }
+
+        .founder-card::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(201, 169, 110, 0.03) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .card-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            animation: shine 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0%, 100% { left: -100%; }
+            50% { left: 200%; }
+        }
+
+        /* Founder Name with Verified Badge */
+        .founder-name-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .founder-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .founder-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 300;
+            color: var(--white);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #1DA1F2, #0d8bd9);
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+            animation: badge-pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(29, 161, 242, 0.4);
+        }
+
+        @keyframes badge-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(29, 161, 242, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(29, 161, 242, 0.7); }
+        }
+
+        .verified-badge i {
+            color: white;
+            font-size: 13px;
+        }
+
+        /* Divider */
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 0 auto 30px;
+            opacity: 0.6;
+        }
+
+        /* Quote Section */
+        .quote-section {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .quote-icon {
+            font-size: 2rem;
+            color: var(--gold);
+            opacity: 0.3;
+            margin-bottom: 15px;
+        }
+
+        .quote-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 300;
+            font-style: italic;
+            line-height: 2;
+            color: var(--silver);
+            min-height: 80px;
+            transition: opacity 0.8s ease;
+        }
+
+        .quote-text.fade {
+            opacity: 0;
+        }
+
+        .quote-author {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem;
+            color: var(--gold);
+            margin-top: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        /* Quote Navigation */
+        .quote-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: none;
+        }
+
+        .dot.active {
+            background: var(--gold);
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+            transform: scale(1.3);
+        }
+
+        .dot:hover {
+            background: rgba(201, 169, 110, 0.5);
+        }
+
+        /* Bottom Elements */
+        .bottom-section {
+            margin-top: 50px;
+            text-align: center;
+            animation: fade-in-up 1.5s ease-out 0.6s both;
+        }
+
+        .heart-animation {
+            font-size: 1.5rem;
+            color: var(--gold);
+            opacity: 0.4;
+            animation: heartbeat 2s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .tagline {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--silver);
+            opacity: 0.5;
+            letter-spacing: 1px;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .footer-text {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.15);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .founder-card {
+                padding: 35px 25px;
+            }
+            .founder-name {
+                font-size: 2rem;
+            }
+            .quote-text {
+                font-size: 1.1rem;
+            }
+            .logo-wrapper {
+                width: 110px;
+                height: 110px;
+            }
+            .logo-img {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        /* Glitch effect on hover for name */
+        .founder-name-wrapper:hover .founder-name {
+            animation: glitch 0.3s ease;
+        }
+
+        @keyframes glitch {
+            0%, 100% { text-shadow: none; }
+            25% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,255,255,0.3); }
+            50% { text-shadow: -2px 0 rgba(255,0,0,0.3), 2px 0 rgba(0,255,255,0.3); }
+            75% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,255,255,0.3); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--midnight);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(201, 169, 110, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-container">
+        <div class="bg-gradient"></div>
+        <div class="particles" id="particles"></div>
+        <div class="rain-container" id="rain"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-wrapper">
+                <div class="logo-glow"></div>
+                <div class="logo-ring"></div>
+                <img src="https://i.pinimg.com/736x/3c/45/0a/3c450aa81d2ba5a2cb375afb2aea69c1.jpg" alt="TrexA Logo" class="logo-img">
+            </div>
+        </div>
+
+        <!-- Founder Card -->
+        <div class="founder-card">
+            <div class="card-shine"></div>
+
+            <div class="founder-label">Kurucu</div>
+
+            <div class="founder-name-wrapper">
+                <h1 class="founder-name">TrexA</h1>
+                <div class="verified-badge" title="Doğrulanmış Hesap">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="quote-section">
+                <div class="quote-icon"><i class="fas fa-quote-left"></i></div>
+                <p class="quote-text" id="quoteText">"Bazı aşklar, ölüm bile bitiremez..."</p>
+                <div class="quote-author" id="quoteAuthor">— Bilinmeyen</div>
+            </div>
+
+            <div class="quote-dots" id="quoteDots"></div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="bottom-section">
+            <div class="heart-animation"><i class="fas fa-heart-broken"></i></div>
+            <p class="tagline">Her acı, bir şiirdir yazılmamış...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p class="footer-text">© 2026 TrexA — Aşk Acısı</p>
+    </div>
+
+    <script>
+        // Heartbreak Quotes
+        const quotes = [
+            { text: "Bazı aşklar, ölüm bile bitiremez...", author: "Bilinmeyen" },
+            { text: "Seni unutmak için öğrendiğim her şey, seni daha çok hatırlatmaya yetiyor.", author: "TrexA" },
+            { text: "Gözlerin hâlâ rüyalarımda, ama artık uyanınca yanımda değilsin.", author: "Bilinmeyen" },
+            { text: "Kalbimdeki boşluk, seninle doluydu bir zamanlar...", author: "TrexA" },
+            { text: "Sessizliğin en acı tarafı, senin sesini özlemek değil; artık duyamayacağımı bilmek.", author: "Bilinmeyen" },
+            { text: "Her gece yıldızlara bakıyorum, belki sen de bakıyorsundur diye...", author: "TrexA" },
+            { text: "Ayrılık değil acı veren, ayrıldıktan sonra hatırlamak.", author: "Bilinmeyen" },
+            { text: "Sen gittin, ama kokun hâlâ her yerde...", author: "TrexA" }
+        ];
+
+        let currentQuote = 0;
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+        const quoteDots = document.getElementById('quoteDots');
+
+        // Create dots
+        quotes.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.onclick = () => setQuote(i);
+            quoteDots.appendChild(dot);
+        });
+
+        function setQuote(index) {
+            quoteText.classList.add('fade');
+            setTimeout(() => {
+                currentQuote = index;
+                quoteText.textContent = '"' + quotes[index].text + '"';
+                quoteAuthor.textContent = '— ' + quotes[index].author;
+                quoteText.classList.remove('fade');
+
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.classList.toggle('active', i === index);
+                });
+            }, 400);
+        }
+
+        // Auto-rotate quotes
+        setInterval(() => {
+            setQuote((currentQuote + 1) % quotes.length);
+        }, 6000);
+
+        // Generate Particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particle.style.animationDelay = Math.random() * 10 + 's';
+            particle.style.width = (Math.random() * 3 + 1) + 'px';
+            particle.style.height = particle.style.width;
+            particlesContainer.appendChild(particle);
+        }
+
+        // Generate Rain
+        const rainContainer = document.getElementById('rain');
+        for (let i = 0; i < 80; i++) {
+            const drop = document.createElement('div');
+            drop.className = 'rain-drop';
+            drop.style.left = Math.random() * 100 + '%';
+            drop.style.animationDuration = (Math.random() * 1 + 0.5) + 's';
+            drop.style.animationDelay = Math.random() * 2 + 's';
+            drop.style.opacity = Math.random() * 0.5 + 0.2;
+            rainContainer.appendChild(drop);
+        }
+
+        // Parallax effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+
+            document.querySelector('.founder-card').style.transform = 
+                `translate(${x * 0.5}px, ${y * 0.5}px)`;
+            document.querySelector('.logo-wrapper').style.transform = 
+                `translate(${x * 0.3}px, ${y * 0.3}px)`;
+        });
+
+        // Typewriter effect on load for first quote
+        window.addEventListener('load', () => {
+            const text = quotes[0].text;
+            quoteText.textContent = '';
+            let i = 0;
+            const typeInterval = setInterval(() => {
+                if (i < text.length) {
+                    quoteText.textContent += text.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typeInterval);
+                    quoteText.textContent = '"' + text + '"';
+                }
+            }, 50);
+        });
+    </script>
+</body>
+</html>
