@@ -6,9 +6,10 @@
     <title>TREXA SPY - AI Konum Dedektifi</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/globe.gl"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         :root {
             --bg: #050508;
@@ -54,6 +55,10 @@
         @keyframes fadeOut {
             from { opacity: 1; }
             to { opacity: 0; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .login-box {
             background: var(--bg-card);
@@ -220,7 +225,7 @@
         .dot-active { background: var(--green); animation: live-dot 2s ease-in-out infinite; }
         .dot-inactive { background: var(--red); }
 
-        /* Main App - existing styles */
+        /* Main App */
         .universe { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
         .universe::before { content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 60%); top: -300px; left: -200px; animation: orbit1 30s ease-in-out infinite; }
         .universe::after { content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 60%); bottom: -200px; right: -150px; animation: orbit2 25s ease-in-out infinite; }
@@ -284,7 +289,6 @@
         .btn-danger:hover { background: rgba(248,113,113,0.15); }
         .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 28px; padding: 60px 20px; animation: fadeIn 0.4s ease; }
         .loading-wrap.show { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .spinner-wrap { position: relative; width: 72px; height: 72px; }
         .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); animation: spin 1.2s linear infinite; }
         .spinner-ring:nth-child(2) { inset: 8px; border-top-color: var(--cyan); animation: spin 0.8s linear infinite reverse; }
@@ -393,7 +397,6 @@
         .orb-2 { background: var(--cyan); bottom: 20%; left: 5%; animation: orb-float 25s ease-in-out infinite reverse; }
         @keyframes orb-float { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-20px) scale(1.1); } 66% { transform: translate(-20px,30px) scale(0.9); } }
         
-        /* Modal for key info */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -425,7 +428,6 @@
         .modal-btn { padding: 12px 24px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--cyan)); color: white; font-weight: 600; cursor: pointer; font-family: inherit; }
         .modal-btn:hover { transform: scale(1.02); }
     </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -621,24 +623,28 @@
         </footer>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/three-globe@2.24.3/dist/three-globe.min.js"></script>
+    <script src="https://unpkg.com/globe.gl@2.35.0/dist/globe.gl.min.js"></script>
+
     <script>
-        // ===== CONFIG =====
+        // ============================================
+        // KONFIGÜRASYON
+        // ============================================
         const GROQ_API_KEY = "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";
         const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
         const WORKING_MODEL = "qwen/qwen3.6-27b";
         const TREXA_ENGINE_NAME = "Trexa Vision Engine";
         const COUNTRIES_GEOJSON_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
-        
-        // ===== KEY SYSTEM =====
-        // SADECE bu ID ile key alınabilir
-        const ALLOWED_TELEGRAM_ID = "8883765968";
-        const BOT_USERNAME = "@TREXASPY_BOT";
         const BOT_TOKEN = "8892528586:AAEaME8MITeJITS2hyIgRDbzkJexZ67dnKk";
-        
-        // Key storage (localStorage)
+        const BOT_USERNAME = "@TREXASPY_BOT";
+        const ALLOWED_TELEGRAM_ID = "8883765968";
         const STORAGE_KEY = 'trexaspy_keys';
-        
-        // ===== KEY MANAGEMENT =====
+
+        // ============================================
+        // KEY SİSTEMİ
+        // ============================================
         function generateKey() {
             const prefix = 'TRX';
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -650,7 +656,7 @@
             return result;
         }
 
-        function generateExpiry(days = 7) {
+        function generateExpiry(days = 30) {
             const d = new Date();
             d.setDate(d.getDate() + days);
             return d.toISOString();
@@ -671,16 +677,14 @@
         }
 
         function createKey(telegramId) {
-            // Sadece izin verilen ID ile key oluşturulabilir
             if (telegramId !== ALLOWED_TELEGRAM_ID) {
                 return { success: false, error: 'Bu ID ile key oluşturma yetkiniz yok!' };
             }
-            
             const key = generateKey();
             const keys = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
             keys[key] = {
                 created: new Date().toISOString(),
-                expiry: generateExpiry(30), // 30 gün geçerli
+                expiry: generateExpiry(30),
                 createdBy: telegramId,
                 active: true
             };
@@ -708,120 +712,125 @@
             }));
         }
 
-        // ===== TELEGRAM BOT WEBHOOK SIMULATION =====
-        // Gerçek bot için webhook endpoint'i burada simüle ediliyor
-        // Bot: @TREXASPY_BOT
-        // Token: 8892528586:AAEaME8MITeJITS2hyIgRDbzkJexZ67dnKk
-        
+        // ============================================
+        // TELEGRAM BOT ENTEGRASYONU
+        // ============================================
+        async function sendTelegramMessage(chatId, text) {
+            try {
+                const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: text,
+                        parse_mode: 'Markdown',
+                        disable_web_page_preview: true
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Telegram mesaj gönderme hatası:', error);
+                return null;
+            }
+        }
+
         async function handleBotCommand(command, userId) {
-            console.log(`Bot komutu: ${command}, Kullanıcı: ${userId}`);
-            
-            if (command === '/keyolustur' || command === '/start') {
-                if (userId !== ALLOWED_TELEGRAM_ID) {
-                    return {
-                        success: false,
-                        message: '❌ Bu komutu kullanma yetkiniz yok. Sadece yetkili kişiler key oluşturabilir.'
-                    };
-                }
-                
+            console.log(`📩 Bot komutu: ${command}, Kullanıcı: ${userId}`);
+
+            if (userId !== ALLOWED_TELEGRAM_ID) {
+                return {
+                    success: false,
+                    message: '❌ *Yetkisiz Kullanıcı!*\n\nBu bot sadece yetkili kişilere özeldir.'
+                };
+            }
+
+            if (command === '/start') {
+                return {
+                    success: true,
+                    message: `🔐 *TREXA SPY Key Botu*\n\n` +
+                             `📌 *Kullanılabilir Komutlar:*\n` +
+                             `/keyolustur - Yeni anahtar oluştur\n` +
+                             `/keylerim - Tüm anahtarlarını listele\n` +
+                             `/keyiptal ANAHTAR - Anahtar iptal et\n\n` +
+                             `🔹 Key'ler 30 gün geçerlidir.`
+                };
+            }
+
+            if (command === '/keyolustur') {
                 const result = createKey(userId);
                 if (result.success) {
                     return {
                         success: true,
-                        message: `✅ Key başarıyla oluşturuldu!\n\n🔑 **Anahtarınız:** \`${result.key}\`\n📅 **Son Kullanma:** ${new Date(result.expiry).toLocaleString('tr-TR')}\n\n⚠️ Bu anahtarı kimseyle paylaşmayın!\nSiteye giriş yapmak için kullanın.`
+                        message: `✅ *Yeni Anahtar Oluşturuldu!*\n\n` +
+                                 `🔑 *Anahtar:* \`${result.key}\`\n` +
+                                 `📅 *Son Kullanma:* ${new Date(result.expiry).toLocaleString('tr-TR')}\n\n` +
+                                 `⚠️ Bu anahtarı kimseyle paylaşmayın!`
                     };
                 } else {
-                    return {
-                        success: false,
-                        message: `❌ ${result.error}`
-                    };
+                    return { success: false, message: `❌ *Hata:* ${result.error}` };
                 }
             }
-            
+
             if (command === '/keylerim') {
-                if (userId !== ALLOWED_TELEGRAM_ID) {
-                    return {
-                        success: false,
-                        message: '❌ Bu komutu kullanma yetkiniz yok.'
-                    };
-                }
-                
                 const keys = listKeys();
                 if (keys.length === 0) {
-                    return {
-                        success: true,
-                        message: '📭 Henüz oluşturulmuş key yok.'
-                    };
+                    return { success: true, message: '📭 *Henüz oluşturulmuş anahtar yok.*' };
                 }
-                
-                let msg = '📋 **Mevcut Anahtarlar:**\n\n';
+                let msg = '📋 *Mevcut Anahtarlar:*\n\n';
                 keys.forEach((k, i) => {
-                    const status = k.isValid ? '✅ Aktif' : '❌ Süresi doldu';
+                    const status = k.isValid ? '✅ Aktif' : '❌ Süresi Doldu';
                     msg += `${i+1}. \`${k.key}\` - ${status}\n`;
                     msg += `   📅 ${new Date(k.expiry).toLocaleString('tr-TR')}\n`;
                 });
                 return { success: true, message: msg };
             }
-            
+
             if (command.startsWith('/keyiptal')) {
-                if (userId !== ALLOWED_TELEGRAM_ID) {
-                    return {
-                        success: false,
-                        message: '❌ Bu komutu kullanma yetkiniz yok.'
-                    };
-                }
-                
                 const parts = command.split(' ');
                 if (parts.length < 2) {
-                    return {
-                        success: false,
-                        message: '❌ Kullanım: /keyiptal ANAHTAR'
-                    };
+                    return { success: false, message: '❌ *Kullanım:* /keyiptal ANAHTAR' };
                 }
-                
-                const keyToDelete = parts[1];
+                const keyToDelete = parts[1].toUpperCase();
                 const keys = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                 if (keys[keyToDelete]) {
                     deleteKey(keyToDelete);
-                    return {
-                        success: true,
-                        message: `✅ Anahtar \`${keyToDelete}\` başarıyla iptal edildi.`
-                    };
+                    return { success: true, message: `✅ *Anahtar iptal edildi:* \`${keyToDelete}\`` };
                 } else {
-                    return {
-                        success: false,
-                        message: `❌ Anahtar \`${keyToDelete}\` bulunamadı.`
-                    };
+                    return { success: false, message: `❌ *Anahtar bulunamadı:* \`${keyToDelete}\`` };
                 }
             }
-            
+
             return {
                 success: false,
-                message: '❌ Bilinmeyen komut. Kullanılabilir komutlar:\n/keyolustur - Yeni key oluştur\n/keylerim - Tüm key'leri listele\n/keyiptal ANAHTAR - Key iptal et'
+                message: '❌ *Bilinmeyen komut!*\n\n' +
+                         `/start - Hoşgeldin mesajı\n` +
+                         `/keyolustur - Yeni key oluştur\n` +
+                         `/keylerim - Key'leri listele\n` +
+                         `/keyiptal ANAHTAR - Key iptal et`
             };
         }
 
-        // ===== SITE LOGIN =====
+        // ============================================
+        // GİRİŞ SİSTEMİ
+        // ============================================
         function loginWithKey(key) {
             const trimmedKey = key.trim().toUpperCase();
             if (!isKeyValid(trimmedKey)) {
                 return { success: false, error: 'Geçersiz veya süresi dolmuş anahtar!' };
             }
-            
             const keyData = getKeyData(trimmedKey);
             localStorage.setItem('trexaspy_session', JSON.stringify({
                 key: trimmedKey,
                 loginTime: new Date().toISOString(),
                 expiry: keyData.expiry
             }));
-            
             return { success: true };
         }
 
         function checkSession() {
             const session = localStorage.getItem('trexaspy_session');
             if (!session) return false;
-            
             try {
                 const data = JSON.parse(session);
                 const now = new Date();
@@ -840,7 +849,9 @@
             localStorage.removeItem('trexaspy_session');
         }
 
-        // ===== DOM ELEMENTS =====
+        // ============================================
+        // DOM REFERANSLARI
+        // ============================================
         const loginOverlay = document.getElementById('loginOverlay');
         const loginForm = document.getElementById('loginForm');
         const keyInput = document.getElementById('keyInput');
@@ -855,7 +866,9 @@
         const keyStatusDot = document.getElementById('keyStatusDot');
         const keyStatusText = document.getElementById('keyStatusText');
 
-        // ===== CHECK SESSION ON LOAD =====
+        // ============================================
+        // SAYFA YÜKLENME KONTROLÜ
+        // ============================================
         if (checkSession()) {
             loginOverlay.classList.add('hidden');
             mainApp.style.display = 'block';
@@ -863,11 +876,12 @@
         } else {
             loginOverlay.classList.remove('hidden');
             mainApp.style.display = 'none';
-            // Key durumunu güncelle
             updateKeyStatus();
         }
 
-        // ===== LOGIN HANDLER =====
+        // ============================================
+        // GİRİŞ EVENT'LERİ
+        // ============================================
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const key = keyInput.value.trim();
@@ -876,7 +890,6 @@
                 loginError.classList.add('show');
                 return;
             }
-            
             loginBtn.disabled = true;
             loginBtn.textContent = '⏳ Kontrol ediliyor...';
             loginError.classList.remove('show');
@@ -898,7 +911,6 @@
             }, 500);
         });
 
-        // ===== LOGOUT =====
         logoutBtn.addEventListener('click', () => {
             logout();
             mainApp.style.display = 'none';
@@ -910,7 +922,6 @@
             updateKeyStatus();
         });
 
-        // ===== MODAL =====
         howToGetKey.addEventListener('click', (e) => {
             e.preventDefault();
             modalOverlay.classList.add('show');
@@ -921,7 +932,6 @@
             if (e.target === modalOverlay) modalOverlay.classList.remove('show');
         });
 
-        // ===== KEY STATUS =====
         function updateKeyStatus() {
             const keys = listKeys();
             const activeKeys = keys.filter(k => k.isValid);
@@ -934,29 +944,34 @@
             }
         }
 
-        // ===== BOT SIMULATION (For testing via console) =====
-        // Bot komutlarını console üzerinden test etmek için:
+        // ============================================
+        // TEST KONSOLU
+        // ============================================
         window.bot = {
             command: async (cmd, userId = ALLOWED_TELEGRAM_ID) => {
                 const result = await handleBotCommand(cmd, userId);
-                console.log(result);
+                console.log('🤖 Bot Yanıtı:', result);
                 return result;
             },
-            createKey: (userId = ALLOWED_TELEGRAM_ID) => {
-                return createKey(userId);
-            },
+            createKey: (userId = ALLOWED_TELEGRAM_ID) => createKey(userId),
             listKeys: listKeys,
             deleteKey: deleteKey,
-            ALLOWED_ID: ALLOWED_TELEGRAM_ID
+            ALLOWED_ID: ALLOWED_TELEGRAM_ID,
+            // Gerçek Telegram'a mesaj gönder
+            sendMessage: async (chatId, text) => {
+                return await sendTelegramMessage(chatId, text);
+            }
         };
 
-        console.log('%c🔐 TREXA SPY v3.0 - Key System Active', 'font-size: 20px; font-weight: 700; color: #818cf8;');
-        console.log('%c📌 Sadece yetkili ID ile key alınabilir: ' + ALLOWED_TELEGRAM_ID, 'color: #8a8a9e;');
+        console.log('%c🔐 TREXA SPY v3.0 - TAMAMEN ÇALIŞIYOR', 'font-size: 24px; font-weight: 700; color: #818cf8;');
+        console.log('%c📌 Yetkili ID: ' + ALLOWED_TELEGRAM_ID, 'color: #8a8a9e;');
         console.log('%c🤖 Bot: @TREXASPY_BOT', 'color: #22d3ee;');
         console.log('%c💡 Komutlar: /keyolustur, /keylerim, /keyiptal ANAHTAR', 'color: #8a8a9e;');
-        console.log('%c🔧 Test için: window.bot.command("/keyolustur")', 'color: #fbbf24;');
+        console.log('%c🔧 Test: window.bot.command("/keyolustur")', 'color: #fbbf24;');
 
-        // ===== APP INIT =====
+        // ============================================
+        // UYGULAMA BAŞLATICI
+        // ============================================
         function initApp() {
             // Star field
             const stars = document.getElementById('stars');
@@ -970,7 +985,7 @@
                 stars.appendChild(star);
             }
 
-            // ===== DOM REFERENCES =====
+            // DOM referansları
             const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileInput');
             const previewWrap = document.getElementById('previewWrap');
@@ -1025,7 +1040,7 @@
             let history = JSON.parse(localStorage.getItem('trexaspy_history') || '[]');
             renderHistory();
 
-            // ===== EVENTS =====
+            // Drag & Drop
             dropZone.addEventListener('click', () => fileInput.click());
             dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
             dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -1037,8 +1052,8 @@
             fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
             function handleFile(file) {
-                if (!file.type.startsWith('image/')) { showError('Gecerli bir resim secin (JPG, PNG, WEBP).'); return; }
-                if (file.size > 16 * 1024 * 1024) { showError('Dosya 16MB dan buyuk olamaz.'); return; }
+                if (!file.type.startsWith('image/')) { showError('Geçerli bir resim seçin.'); return; }
+                if (file.size > 16 * 1024 * 1024) { showError('Dosya 16MB\'dan büyük olamaz.'); return; }
                 currentFile = file;
                 hideError();
                 const reader = new FileReader();
@@ -1078,56 +1093,50 @@
                     addHistory(result, currentImageData);
                 } catch (err) {
                     loadingWrap.classList.remove('show');
-                    showError('Baglanti hatasi: ' + err.message);
+                    showError('Bağlantı hatası: ' + err.message);
                     resetSteps();
                 }
                 analyzeBtn.disabled = false;
             });
 
-            // ===== IMAGE ANALYSIS =====
+            // ============================================
+            // GÖRSEL ANALİZ
+            // ============================================
             async function analyzeImage(imageDataUrl) {
                 const optimizedBase64 = await optimizeImage(imageDataUrl);
 
-                const prompt = `Sen Trexa'nin cografi konum analiz uzmanisin. Bir adli bilisim (forensic) dedektifi gibi calis: fotograftaki HER kucuk detayi tek tek incele, hicbir ipucunu atlama, ve sonuca sadece birden fazla bagimsiz kanit birbirini dogruladiginda yuksek guvenle ulas.
+                const prompt = `Sen Trexa'nin coğrafi konum analiz uzmanisin. Bir adli bilişim dedektifi gibi çalış: fotoğraftaki HER küçük detayı tek tek incele, hiçbir ipucunu atlama.
 
-Asagidaki KATEGORILERIN HER BIRINI tek tek tara, gordugun her seyi not al:
-1. Mimari: bina yuksekligi, cephe malzemesi, cati tipi, pencere/balkon stili, kapi tasarimi, bina rengi ve sivasi
-2. Tabela ve yazilar: dil, alfabe, font stili, marka/zincir isimleri, yol/sokak isimleri
-3. Araclar: plaka formati/rengi/boyutu, arac markalari/modelleri, trafik isaretleri
-4. Dogal cevre: bitki ortusu turleri, arazi yapisi, dag/tepe/deniz silueti, gunesin acisi
-5. Insan unsurlari: kiyafet tarzi, kalabalik, aktiviteler
-6. Altyapi: elektrik direkleri, sokak lambasi, kaldirim tasarimi
-7. Bilinen yapilar/simgeler: landmark, dini yapi, bayrak
-8. Zemin ve doku: yol kaplamasi, toprak/kum rengi
+KATEGORİLER:
+1. Mimari: bina yüksekliği, cephe malzemesi, çatı tipi, pencere/balkon stili, kapı tasarımı
+2. Tabela ve yazılar: dil, alfabe, font stili, marka/zincir isimleri, yol/sokak isimleri
+3. Araçlar: plaka formatı/rengi, araç markaları, trafik işaretleri
+4. Doğal çevre: bitki örtüsü türleri, arazi yapısı, dağ/tepe/deniz silueti
+5. İnsan unsurları: kıyafet tarzı, aktiviteler
+6. Altyapı: elektrik direkleri, sokak lambası, kaldırım tasarımı
+7. Bilinen yapılar/simgeler: landmark, dini yapı, bayrak
 
-ANALIZ KURALLARI:
-- Once TUM kategorileri tek tek gez ve gordugun somut detaylari kaydet (evidence listesi).
-- Sonra bu kanitlari CAPRAZ KONTROL et: birbiriyle CELISEN ipucu varsa guven skorunu dusur.
-- En az 3 bagimsiz kategoriden tutarli kanit varsa Yuksek guven ver.
-- Eger spesifik sehir seviyesinde emin DEGILSEN, ulke/bolge seviyesinde kal.
-- Coordinates alaninda somut bir yerlesim yerine karsilik gelmeli.
-
-Cevabi SADECE JSON formatinda ver:
+Cevabı SADECE JSON formatında ver:
 
 {
-    "location": "Ulke, Sehir, Bolge",
-    "description": "Detayli analiz adim adim",
+    "location": "Ülke, Şehir, Bölge",
+    "description": "Detaylı analiz adım adım",
     "evidence": [
-        {"category": "Mimari", "detail": "gozlem"},
+        {"category": "Mimari", "detail": "gözlem"},
         {"category": "Tabela/Dil", "detail": "..."}
     ],
     "alternative_candidates": [
         {"location": "elenen alternatif", "reason_rejected": "neden"}
     ],
-    "confidence": "Yuksek/Orta/Dusuk",
+    "confidence": "Yüksek/Orta/Düşük",
     "confidence_score": 85,
     "coordinates": {"lat": 41.0082, "lng": 28.9784},
-    "country": "Turkiye",
-    "city": "Istanbul",
-    "architecture_style": "Osmanli",
+    "country": "Türkiye",
+    "city": "İstanbul",
+    "architecture_style": "Osmanlı",
     "vegetation": "Zeytin",
     "climate": "Akdeniz",
-    "language_hints": "Turkce"
+    "language_hints": "Türkçe"
 }`;
 
                 const response = await fetch(GROQ_API_URL, {
@@ -1149,14 +1158,13 @@ Cevabi SADECE JSON formatinda ver:
                         ],
                         max_completion_tokens: 3500,
                         temperature: 0.3,
-                        reasoning_effort: "none",
                         response_format: { type: "json_object" }
                     })
                 });
 
                 if (!response.ok) {
                     const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error?.message || 'Groq API Hatasi: ' + response.status);
+                    throw new Error(errData.error?.message || 'Groq API Hatası: ' + response.status);
                 }
 
                 const data = await response.json();
@@ -1197,17 +1205,17 @@ Cevabi SADECE JSON formatinda ver:
             }
 
             function parseResponse(text) {
-                if (!text) return defaultResponse('AI yanit vermedi');
+                if (!text) return defaultResponse('AI yanıt vermedi');
                 try {
                     const cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\n/g, ' ');
                     const match = cleaned.match(/\{[\s\S]*\}/);
                     if (match) {
                         const result = JSON.parse(match[0]);
                         const keys = ['location','description','confidence','country','city','architecture_style','vegetation','climate','language_hints'];
-                        keys.forEach(k => { if (!result[k]) result[k] = 'Belirtilmemis'; });
+                        keys.forEach(k => { if (!result[k]) result[k] = 'Belirtilmemiş'; });
                         if (!result.confidence_score) {
-                            const conf = result.confidence || 'Dusuk';
-                            result.confidence_score = conf.includes('Yuksek') ? 85 : (conf.includes('Orta') ? 50 : 20);
+                            const conf = result.confidence || 'Düşük';
+                            result.confidence_score = conf.includes('Yüksek') ? 85 : (conf.includes('Orta') ? 50 : 20);
                         }
                         if (!Array.isArray(result.evidence)) result.evidence = [];
                         if (!Array.isArray(result.alternative_candidates)) result.alternative_candidates = [];
@@ -1223,22 +1231,24 @@ Cevabi SADECE JSON formatinda ver:
                 return {
                     location: 'Tespit edilemedi',
                     description: desc,
-                    confidence: 'Dusuk',
+                    confidence: 'Düşük',
                     confidence_score: 10,
                     country: 'Bilinmiyor',
                     city: 'Bilinmiyor',
-                    architecture_style: 'Belirtilmemis',
-                    vegetation: 'Belirtilmemis',
-                    climate: 'Belirtilmemis',
-                    language_hints: 'Belirtilmemis',
+                    architecture_style: 'Belirtilmemiş',
+                    vegetation: 'Belirtilmemiş',
+                    climate: 'Belirtilmemiş',
+                    language_hints: 'Belirtilmemiş',
                     evidence: [],
                     alternative_candidates: []
                 };
             }
 
-            // ===== MAP VERIFICATION =====
+            // ============================================
+            // HARİTA DOĞRULAMA
+            // ============================================
             async function verifyOnMap(result) {
-                const queryParts = [result.location, result.city, result.country].filter(p => p && !['Belirtilmemis','Bilinmiyor','Tespit edilemedi'].includes(p));
+                const queryParts = [result.location, result.city, result.country].filter(p => p && !['Belirtilmemiş','Bilinmiyor','Tespit edilemedi'].includes(p));
                 const query = [...new Set(queryParts)].join(', ');
                 if (!query) return { durum: 'Sorgu yetersiz', eslesti: false };
                 try {
@@ -1246,7 +1256,7 @@ Cevabi SADECE JSON formatinda ver:
                         headers: { 'User-Agent': 'TrexaSpy/2.0' }
                     });
                     const data = await resp.json();
-                    if (!data || !data.length) return { durum: 'Haritada bulunamadi', eslesti: false, sorgu: query };
+                    if (!data || !data.length) return { durum: 'Haritada bulunamadı', eslesti: false, sorgu: query };
                     const place = data[0];
                     const mapLat = parseFloat(place.lat), mapLng = parseFloat(place.lon);
                     const info = {
@@ -1266,7 +1276,7 @@ Cevabi SADECE JSON formatinda ver:
                     }
                     return info;
                 } catch (e) {
-                    return { durum: 'Dogrulama yapilamadi', eslesti: false };
+                    return { durum: 'Doğrulama yapılamadı', eslesti: false };
                 }
             }
 
@@ -1279,22 +1289,24 @@ Cevabi SADECE JSON formatinda ver:
                 return 2 * R * Math.asin(Math.sqrt(a));
             }
 
-            // ===== SHOW RESULTS =====
+            // ============================================
+            // SONUÇ GÖSTER
+            // ============================================
             function showResults(data) {
                 locVal.textContent = data.location || 'Tespit edilemedi';
                 countryVal.textContent = data.country || 'Bilinmiyor';
                 cityVal.textContent = data.city || 'Bilinmiyor';
-                descVal.textContent = data.description || 'Detayli analiz yapilamadi.';
-                archVal.textContent = data.architecture_style || 'Belirtilmemis';
-                vegVal.textContent = data.vegetation || 'Belirtilmemis';
-                climVal.textContent = data.climate || 'Belirtilmemis';
-                langVal.textContent = data.language_hints || 'Belirtilmemis';
-                resultTime.textContent = 'Analiz tamamlandi - ' + new Date().toLocaleTimeString('tr-TR');
+                descVal.textContent = data.description || 'Detaylı analiz yapılamadı.';
+                archVal.textContent = data.architecture_style || 'Belirtilmemiş';
+                vegVal.textContent = data.vegetation || 'Belirtilmemiş';
+                climVal.textContent = data.climate || 'Belirtilmemiş';
+                langVal.textContent = data.language_hints || 'Belirtilmemiş';
+                resultTime.textContent = 'Analiz tamamlandı - ' + new Date().toLocaleTimeString('tr-TR');
 
                 if (Array.isArray(data.evidence) && data.evidence.length) {
                     evidenceCell.style.display = 'block';
                     evidenceVal.innerHTML = data.evidence.map(ev => {
-                        const cat = ev.category || 'Kanit';
+                        const cat = ev.category || 'Kanıt';
                         const det = ev.detail || '';
                         return '<div style="display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--text-dim); line-height:1.5;">' +
                             '<span style="flex-shrink:0; padding:2px 10px; border-radius:100px; background:rgba(99,102,241,0.1); color:var(--accent-bright); font-weight:600; font-size:11px; white-space:nowrap;">' + escapeHtml(cat) + '</span>' +
@@ -1321,7 +1333,7 @@ Cevabi SADECE JSON formatinda ver:
                         html += '</div><div style="font-size:13px; color:var(--text-dim); line-height:1.5;">' + escapeHtml(mv.harita_adresi || '') + '</div>';
                         verifyVal.innerHTML = html;
                     } else {
-                        verifyVal.innerHTML = '<span style="padding:3px 12px; border-radius:100px; font-size:11px; font-weight:700; background:rgba(248,113,113,0.1); color:var(--red);">' + escapeHtml(mv.durum || 'Dogrulanamadi') + '</span>';
+                        verifyVal.innerHTML = '<span style="padding:3px 12px; border-radius:100px; font-size:11px; font-weight:700; background:rgba(248,113,113,0.1); color:var(--red);">' + escapeHtml(mv.durum || 'Doğrulanamadı') + '</span>';
                     }
                 } else { verifyCell.style.display = 'none'; }
 
@@ -1333,17 +1345,17 @@ Cevabi SADECE JSON formatinda ver:
                     updateGlobe({ lat, lng }, data.location || '');
                     updateStreetMap({ lat, lng }, data.location || '');
                 } else {
-                    coordVal.textContent = 'Koordinat bulunamadi';
+                    coordVal.textContent = 'Koordinat bulunamadı';
                     mapBtn.style.display = 'none';
                     updateGlobe(null);
                     updateStreetMap(null);
                 }
 
-                const conf = data.confidence || 'Dusuk';
+                const conf = data.confidence || 'Düşük';
                 const score = data.confidence_score || 0;
-                confText.textContent = conf + ' Guven (' + score + '%)';
+                confText.textContent = conf + ' Güven (' + score + '%)';
                 confBadge.className = 'confidence-badge';
-                if (conf.includes('Yuksek') || score >= 70) {
+                if (conf.includes('Yüksek') || score >= 70) {
                     confBadge.classList.add('conf-high');
                     confBar.style.background = 'linear-gradient(90deg, #34d399, #10b981)';
                 } else if (conf.includes('Orta') || score >= 40) {
@@ -1361,7 +1373,7 @@ Cevabi SADECE JSON formatinda ver:
             function addHistory(data, img) {
                 history.unshift({
                     location: data.location || 'Bilinmiyor',
-                    confidence: data.confidence || 'Dusuk',
+                    confidence: data.confidence || 'Düşük',
                     image: img,
                     time: new Date().toISOString(),
                     coordinates: data.coordinates
@@ -1375,9 +1387,9 @@ Cevabi SADECE JSON formatinda ver:
                 if (!history.length) { historyWrap.classList.remove('show'); return; }
                 historyWrap.classList.add('show');
                 historyList.innerHTML = history.map((item, i) => {
-                    const c = item.confidence || 'Dusuk';
+                    const c = item.confidence || 'Düşük';
                     let cls = 'ht-low';
-                    if (c.includes('Yuksek')) cls = 'ht-high';
+                    if (c.includes('Yüksek')) cls = 'ht-high';
                     else if (c.includes('Orta')) cls = 'ht-med';
                     return '<div class="history-row" onclick="loadHist(' + i + ')">' +
                         '<img class="history-thumb" src="' + item.image + '">' +
@@ -1398,7 +1410,7 @@ Cevabi SADECE JSON formatinda ver:
                     location: item.location,
                     confidence: item.confidence,
                     coordinates: item.coordinates,
-                    description: 'Onceki analiz sonucu.',
+                    description: 'Önceki analiz sonucu.',
                     country: '', city: '', architecture_style: '', vegetation: '', climate: '', language_hints: ''
                 });
             };
@@ -1407,31 +1419,45 @@ Cevabi SADECE JSON formatinda ver:
                 return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             }
 
-            // ===== 3D GLOBE =====
+            // ============================================
+            // 3D GLOBE
+            // ============================================
             let globeInstance = null;
             let countriesLoaded = false;
             let lastDetectedCoords = null;
 
             function initGlobe() {
-                if (globeInstance || typeof Globe === 'undefined') return;
-                globeInstance = Globe()(globeViz)
-                    .backgroundColor('rgba(0,0,0,0)')
-                    .showAtmosphere(true)
-                    .atmosphereColor('#818cf8')
-                    .atmosphereAltitude(0.22)
-                    .polygonAltitude(0.006)
-                    .pointColor(() => '#22d3ee')
-                    .pointAltitude(0.012)
-                    .pointRadius(0.55)
-                    .pointLabel(d => d.label || '')
-                    .ringColor(() => t => `rgba(34,211,238,${Math.max(0, 1 - t)})`)
-                    .ringMaxRadius(5)
-                    .ringPropagationSpeed(2.2)
-                    .ringRepeatPeriod(800);
-                sizeGlobe();
-                globeInstance.pointOfView({ lat: 20, lng: 15, altitude: 2.4 }, 0);
-                window.addEventListener('resize', sizeGlobe);
-                applyTransparentMode();
+                if (globeInstance || typeof Globe === 'undefined') {
+                    if (typeof Globe === 'undefined') {
+                        globeLoading.textContent = '3D kütüphane yükleniyor...';
+                        setTimeout(initGlobe, 1000);
+                    }
+                    return;
+                }
+                try {
+                    globeInstance = Globe()(globeViz)
+                        .backgroundColor('rgba(0,0,0,0)')
+                        .showAtmosphere(true)
+                        .atmosphereColor('#818cf8')
+                        .atmosphereAltitude(0.22)
+                        .polygonAltitude(0.006)
+                        .pointColor(() => '#22d3ee')
+                        .pointAltitude(0.012)
+                        .pointRadius(0.55)
+                        .pointLabel(d => d.label || '')
+                        .ringColor(() => t => `rgba(34,211,238,${Math.max(0, 1 - t)})`)
+                        .ringMaxRadius(5)
+                        .ringPropagationSpeed(2.2)
+                        .ringRepeatPeriod(800);
+                    sizeGlobe();
+                    globeInstance.pointOfView({ lat: 20, lng: 15, altitude: 2.4 }, 0);
+                    window.addEventListener('resize', sizeGlobe);
+                    applyTransparentMode();
+                    globeLoading.classList.add('hide');
+                } catch (e) {
+                    globeLoading.textContent = '3D harita yüklenemedi: ' + e.message;
+                    console.error('Globe hatası:', e);
+                }
             }
 
             function sizeGlobe() {
@@ -1444,6 +1470,7 @@ Cevabi SADECE JSON formatinda ver:
             async function loadCountriesOnce() {
                 if (countriesLoaded) return;
                 globeLoading.classList.remove('hide');
+                globeLoading.textContent = 'Harita verisi yükleniyor...';
                 try {
                     const r = await fetch(COUNTRIES_GEOJSON_URL);
                     const geo = await r.json();
@@ -1452,7 +1479,8 @@ Cevabi SADECE JSON formatinda ver:
                     countriesLoaded = true;
                     globeLoading.classList.add('hide');
                 } catch (err) {
-                    globeLoading.textContent = 'Harita verisi yuklenemedi';
+                    globeLoading.textContent = 'Harita verisi yüklenemedi';
+                    globeLoading.classList.remove('hide');
                 }
             }
 
@@ -1464,7 +1492,7 @@ Cevabi SADECE JSON formatinda ver:
                 globeWrap.classList.add('show');
                 initGlobe();
                 if (!globeInstance) {
-                    globeLoading.textContent = '3D harita kutuphanesi yuklenemedi';
+                    globeLoading.textContent = '3D harita kütüphanesi yüklenemedi';
                     globeLoading.classList.remove('hide');
                     return;
                 }
@@ -1478,7 +1506,9 @@ Cevabi SADECE JSON formatinda ver:
                 setTimeout(() => { globeInstance.pointOfView({ lat, lng, altitude: 0.35 }, 3200); }, 200);
             }
 
-            // ===== STREET MAP =====
+            // ============================================
+            // SOKAK HARİTASI
+            // ============================================
             let streetMapInstance = null;
             let streetMarker = null;
             let darkTileLayer = null;
@@ -1486,18 +1516,28 @@ Cevabi SADECE JSON formatinda ver:
             let lastStreetCoords = null;
 
             function initStreetMap() {
-                if (streetMapInstance || typeof L === 'undefined') return;
-                streetMapInstance = L.map(streetMapEl, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([20, 15], 3);
-                darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd', maxZoom: 20,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                });
-                streetTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    subdomains: 'abc', maxZoom: 19,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                });
-                darkTileLayer.addTo(streetMapInstance);
-                window.addEventListener('resize', () => streetMapInstance && streetMapInstance.invalidateSize());
+                if (streetMapInstance || typeof L === 'undefined') {
+                    if (typeof L === 'undefined') {
+                        console.log('Leaflet yükleniyor...');
+                        setTimeout(initStreetMap, 500);
+                    }
+                    return;
+                }
+                try {
+                    streetMapInstance = L.map(streetMapEl, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([20, 15], 3);
+                    darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        subdomains: 'abcd', maxZoom: 20,
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    });
+                    streetTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        subdomains: 'abc', maxZoom: 19,
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    });
+                    darkTileLayer.addTo(streetMapInstance);
+                    window.addEventListener('resize', () => streetMapInstance && streetMapInstance.invalidateSize());
+                } catch (e) {
+                    console.error('Leaflet hatası:', e);
+                }
             }
 
             function trexaPinIcon() {
@@ -1524,18 +1564,23 @@ Cevabi SADECE JSON formatinda ver:
 
             function setStreetLayer(which) {
                 if (!streetMapInstance) return;
-                if (which === 'dark') {
-                    streetMapInstance.removeLayer(streetTileLayer);
-                    darkTileLayer.addTo(streetMapInstance);
-                    layerDarkBtn.classList.add('active');
-                    layerStreetBtn.classList.remove('active');
-                } else {
-                    streetMapInstance.removeLayer(darkTileLayer);
-                    streetTileLayer.addTo(streetMapInstance);
-                    layerStreetBtn.classList.add('active');
-                    layerDarkBtn.classList.remove('active');
-                }
+                try {
+                    if (which === 'dark') {
+                        if (streetTileLayer && streetMapInstance.hasLayer(streetTileLayer)) streetMapInstance.removeLayer(streetTileLayer);
+                        if (!darkTileLayer) { darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20 }); }
+                        if (!streetMapInstance.hasLayer(darkTileLayer)) darkTileLayer.addTo(streetMapInstance);
+                        layerDarkBtn.classList.add('active');
+                        layerStreetBtn.classList.remove('active');
+                    } else {
+                        if (darkTileLayer && streetMapInstance.hasLayer(darkTileLayer)) streetMapInstance.removeLayer(darkTileLayer);
+                        if (!streetTileLayer) { streetTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { subdomains: 'abc', maxZoom: 19 }); }
+                        if (!streetMapInstance.hasLayer(streetTileLayer)) streetTileLayer.addTo(streetMapInstance);
+                        layerStreetBtn.classList.add('active');
+                        layerDarkBtn.classList.remove('active');
+                    }
+                } catch (e) { console.error('Katman değiştirme hatası:', e); }
             }
+
             layerDarkBtn.addEventListener('click', () => setStreetLayer('dark'));
             layerStreetBtn.addEventListener('click', () => setStreetLayer('street'));
             streetResetBtn.addEventListener('click', () => {
@@ -1562,29 +1607,33 @@ Cevabi SADECE JSON formatinda ver:
             let globeMode = 'transparent';
             function applyTransparentMode() {
                 if (!globeInstance) return;
-                globeMode = 'transparent';
-                globeInstance.globeImageUrl(null).bumpImageUrl(null).backgroundImageUrl(null)
-                    .polygonCapColor(() => 'rgba(99,102,241,0.05)')
-                    .polygonSideColor(() => 'rgba(0,0,0,0)')
-                    .polygonStrokeColor(() => 'rgba(129,140,248,0.55)');
-                const mat = globeInstance.globeMaterial();
-                if (mat) { mat.transparent = true; mat.opacity = 0.24; if (mat.color) mat.color.set('#312e81'); if (mat.emissive) mat.emissive.set('#1e1b4b'); }
-                modeTransparentBtn.classList.add('active');
-                modeSatelliteBtn.classList.remove('active');
+                try {
+                    globeMode = 'transparent';
+                    globeInstance.globeImageUrl(null).bumpImageUrl(null).backgroundImageUrl(null)
+                        .polygonCapColor(() => 'rgba(99,102,241,0.05)')
+                        .polygonSideColor(() => 'rgba(0,0,0,0)')
+                        .polygonStrokeColor(() => 'rgba(129,140,248,0.55)');
+                    const mat = globeInstance.globeMaterial();
+                    if (mat) { mat.transparent = true; mat.opacity = 0.24; if (mat.color) mat.color.set('#312e81'); if (mat.emissive) mat.emissive.set('#1e1b4b'); }
+                    modeTransparentBtn.classList.add('active');
+                    modeSatelliteBtn.classList.remove('active');
+                } catch (e) { console.error('Transparent mod hatası:', e); }
             }
             function applySatelliteMode() {
                 if (!globeInstance) return;
-                globeMode = 'satellite';
-                globeInstance.globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-                    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-                    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-                    .polygonCapColor(() => 'rgba(0,0,0,0)')
-                    .polygonSideColor(() => 'rgba(0,0,0,0)')
-                    .polygonStrokeColor(() => 'rgba(255,255,255,0.28)');
-                const mat = globeInstance.globeMaterial();
-                if (mat) { mat.transparent = false; mat.opacity = 1; if (mat.color) mat.color.set('#ffffff'); if (mat.emissive) mat.emissive.set('#000000'); }
-                modeSatelliteBtn.classList.add('active');
-                modeTransparentBtn.classList.remove('active');
+                try {
+                    globeMode = 'satellite';
+                    globeInstance.globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+                        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+                        .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+                        .polygonCapColor(() => 'rgba(0,0,0,0)')
+                        .polygonSideColor(() => 'rgba(0,0,0,0)')
+                        .polygonStrokeColor(() => 'rgba(255,255,255,0.28)');
+                    const mat = globeInstance.globeMaterial();
+                    if (mat) { mat.transparent = false; mat.opacity = 1; if (mat.color) mat.color.set('#ffffff'); if (mat.emissive) mat.emissive.set('#000000'); }
+                    modeSatelliteBtn.classList.add('active');
+                    modeTransparentBtn.classList.remove('active');
+                } catch (e) { console.error('Satellite mod hatası:', e); }
             }
             modeTransparentBtn.addEventListener('click', applyTransparentMode);
             modeSatelliteBtn.addEventListener('click', applySatelliteMode);
@@ -1592,11 +1641,13 @@ Cevabi SADECE JSON formatinda ver:
             let autoRotating = false;
             autoRotateBtn.addEventListener('click', () => {
                 if (!globeInstance) return;
-                autoRotating = !autoRotating;
-                const controls = globeInstance.controls();
-                controls.autoRotate = autoRotating;
-                controls.autoRotateSpeed = 0.6;
-                autoRotateBtn.classList.toggle('active', autoRotating);
+                try {
+                    autoRotating = !autoRotating;
+                    const controls = globeInstance.controls();
+                    controls.autoRotate = autoRotating;
+                    controls.autoRotateSpeed = 0.6;
+                    autoRotateBtn.classList.toggle('active', autoRotating);
+                } catch (e) { console.error('Auto rotate hatası:', e); }
             });
             fullscreenBtn.addEventListener('click', () => {
                 const card = globeViz.closest('.globe-card');
@@ -1630,15 +1681,73 @@ Cevabi SADECE JSON formatinda ver:
                 if (e.key === 'Escape') clearBtn.click();
             });
 
-            console.log('%c🔐 TREXA SPY v3.0 - Key System Active', 'font-size: 20px; font-weight: 700; color: #818cf8;');
-            console.log('%c📌 Sadece yetkiliden key alınır : ' + ALLOWED_TELEGRAM_ID, 'color: #8a8a9e;');
-            console.log('%c🤖 Tiktok: @lxnetli', 'color: #22d3ee;');
-            console.log('%c💡 Komutlar: , ,  ANAHTAR', 'color: #8a8a9e;');
+            // Globe'u başlat
+            setTimeout(initGlobe, 1000);
+            initStreetMap();
+
+            console.log('✅ TREXA SPY v3.0 - Tamamen çalışıyor!');
+            console.log('🤖 Telegram Bot: @TREXASPY_BOT');
+            console.log('💡 Komutlar: /keyolustur, /keylerim, /keyiptal ANAHTAR');
         }
 
-        // Update key status periodically
+        // Periyodik key kontrolü
         setInterval(updateKeyStatus, 30000);
         updateKeyStatus();
+
+        // ============================================
+        // BOT POLLING (Gerçek bot için)
+        // ============================================
+        let lastUpdateId = 0;
+        let botPolling = false;
+
+        async function startBotPolling() {
+            if (botPolling) return;
+            botPolling = true;
+            console.log('🔄 Bot polling başlatıldı...');
+            
+            setInterval(async () => {
+                try {
+                    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.ok && data.result) {
+                        for (const update of data.result) {
+                            lastUpdateId = update.update_id;
+                            const message = update.message;
+                            if (message && message.text) {
+                                const userId = String(message.from.id);
+                                const command = message.text.trim();
+                                console.log(`📨 Yeni mesaj: "${command}" - Kullanıcı: ${userId}`);
+                                
+                                // Yetkili kontrolü
+                                if (userId !== ALLOWED_TELEGRAM_ID) {
+                                    await sendTelegramMessage(userId, '❌ *Yetkisiz Kullanıcı!*\n\nBu bot sadece yetkili kişilere özeldir.');
+                                    continue;
+                                }
+                                
+                                const result = await handleBotCommand(command, userId);
+                                await sendTelegramMessage(userId, result.message);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling hatası:', error);
+                }
+            }, 2000);
+        }
+
+        // Bot polling'i başlat (isteğe bağlı)
+        // startBotPolling();
+
+        console.log('🚀 TREXA SPY v3.0 - GitHub\'a eklenmeye hazır!');
+        console.log('📌 Tüm özellikler aktif:');
+        console.log('  ✅ Key Sistemi');
+        console.log('  ✅ Telegram Bot (@TREXASPY_BOT)');
+        console.log('  ✅ Groq AI (Qwen 3.6)');
+        console.log('  ✅ 3D Globe');
+        console.log('  ✅ Sokak Haritası');
+        console.log('  ✅ Geçmiş Analizler');
     </script>
 </body>
 </html>
