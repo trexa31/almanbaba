@@ -3,638 +3,1051 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aşk Acısı | TrexA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>TREXA SPY - AI Konum Dedektifi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/globe.gl"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
-            --midnight: #0a0e17;
-            --deep-blue: #0d1525;
-            --ocean: #1a2332;
-            --gold: #c9a96e;
-            --gold-light: #e8d5a3;
-            --silver: #8b9dc3;
-            --white: #f0f2f5;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.06);
+            --bg: #050508;
+            --bg-card: #0c0c14;
+            --bg-card-hover: #12121c;
+            --bg-input: #0a0a12;
+            --border: rgba(255,255,255,0.04);
+            --border-hover: rgba(255,255,255,0.08);
+            --text: #f0f0f5;
+            --text-dim: #8a8a9e;
+            --text-faint: #4a4a5e;
+            --accent: #6366f1;
+            --accent-bright: #818cf8;
+            --accent-glow: rgba(99,102,241,0.4);
+            --cyan: #22d3ee;
+            --green: #34d399;
+            --orange: #fbbf24;
+            --red: #f87171;
+            --pink: #f472b6;
+            --purple: #a78bfa;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        .icon { display: inline-block; vertical-align: -0.18em; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+        .universe { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .universe::before { content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 60%); top: -300px; left: -200px; animation: orbit1 30s ease-in-out infinite; }
+        .universe::after { content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 60%); bottom: -200px; right: -150px; animation: orbit2 25s ease-in-out infinite; }
+        .star { position: absolute; width: 2px; height: 2px; background: rgba(255,255,255,0.3); border-radius: 50%; animation: twinkle var(--dur) ease-in-out infinite; }
+        @keyframes orbit1 { 0%,100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(100px,50px) rotate(90deg); } 50% { transform: translate(50px,100px) rotate(180deg); } 75% { transform: translate(-50px,80px) rotate(270deg); } }
+        @keyframes orbit2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-80px,-60px) scale(1.2); } }
+        @keyframes twinkle { 0%,100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
+        .noise { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+        .grid-lines { position: fixed; inset: 0; z-index: 1; pointer-events: none; background-image: linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px); background-size: 80px 80px; mask-image: radial-gradient(ellipse at 50% 0%, black 20%, transparent 70%); }
+        .app { position: relative; z-index: 2; max-width: 900px; margin: 0 auto; padding: 0 20px; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; margin-bottom: 60px; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 30px rgba(99,102,241,0.3); animation: logo-pulse 4s ease-in-out infinite; }
+        @keyframes logo-pulse { 0%,100% { box-shadow: 0 0 20px rgba(99,102,241,0.2); } 50% { box-shadow: 0 0 40px rgba(99,102,241,0.5), 0 0 60px rgba(34,211,238,0.2); } }
+        .logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, var(--text), var(--accent-bright)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-text span { font-weight: 400; opacity: 0.6; }
+        .nav-badge { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.1); border-radius: 100px; font-size: 12px; color: var(--green); font-weight: 600; letter-spacing: 0.5px; }
+        .nav-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: live-dot 2s ease-in-out infinite; }
+        @keyframes live-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+        .hero { text-align: center; margin-bottom: 64px; position: relative; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15); border-radius: 100px; font-size: 13px; color: var(--accent-bright); font-weight: 500; margin-bottom: 24px; animation: badge-float 3s ease-in-out infinite; }
+        @keyframes badge-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; line-height: 1.1; letter-spacing: -2px; margin-bottom: 20px; }
+        .hero h1 .gradient-text { background: linear-gradient(135deg, var(--accent-bright), var(--cyan), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 200%; animation: gradient-shift 5s ease infinite; }
+        @keyframes gradient-shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .hero p { font-size: 17px; color: var(--text-dim); max-width: 480px; margin: 0 auto; line-height: 1.7; }
+        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 56px; }
+        .feature { padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; text-align: center; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .feature:hover { border-color: var(--border-hover); transform: translateY(-4px); background: var(--bg-card-hover); }
+        .feature-icon { width: 48px; height: 48px; border-radius: 14px; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.12); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 16px; transition: all 0.3s; }
+        .feature:hover .feature-icon { background: rgba(99,102,241,0.15); transform: scale(1.1) rotate(-5deg); box-shadow: 0 0 20px rgba(99,102,241,0.15); }
+        .feature h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+        .feature p { font-size: 12px; color: var(--text-faint); line-height: 1.5; }
+        @media (max-width: 640px) { .features { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } }
 
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: var(--midnight);
-            min-height: 100vh;
-            overflow-x: hidden;
-            color: var(--white);
-        }
-
-        /* Animated Background */
-        .bg-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .bg-gradient {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at 20% 50%, rgba(26, 35, 50, 0.8) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(13, 21, 37, 0.9) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 0%, rgba(201, 169, 110, 0.05) 0%, transparent 40%);
-        }
-
-        /* Floating Particles */
-        .particles {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .particle {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: var(--gold);
-            border-radius: 50%;
-            opacity: 0;
-            animation: float-particle linear infinite;
-        }
-
-        @keyframes float-particle {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            10% { opacity: 0.6; }
-            90% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-        }
-
-        /* Rain Effect */
-        .rain-container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .rain-drop {
-            position: absolute;
-            width: 1px;
-            height: 15px;
-            background: linear-gradient(to bottom, transparent, rgba(139, 157, 195, 0.3));
-            animation: rain-fall linear infinite;
-        }
-
-        @keyframes rain-fall {
-            0% { transform: translateY(-20px); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(100vh); opacity: 0; }
-        }
-
-        /* Main Content */
-        .main-container {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        /* Logo Section */
-        .logo-section {
-            margin-bottom: 40px;
-            animation: fade-in-down 1.5s ease-out;
-        }
-
-        @keyframes fade-in-down {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .logo-wrapper {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin: 0 auto 25px;
-        }
-
-        .logo-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(201, 169, 110, 0.15) 0%, transparent 70%);
-            animation: pulse-glow 3s ease-in-out infinite;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
-        }
-
-        .logo-ring {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 150px;
-            height: 150px;
-            border: 1px solid rgba(201, 169, 110, 0.2);
-            border-radius: 50%;
-            animation: spin-slow 20s linear infinite;
-        }
-
-        .logo-ring::before {
-            content: '';
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            right: 5px;
-            bottom: 5px;
-            border: 1px solid rgba(201, 169, 110, 0.1);
-            border-radius: 50%;
-            animation: spin-slow 15s linear infinite reverse;
-        }
-
-        @keyframes spin-slow {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        .logo-img {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid rgba(201, 169, 110, 0.4);
-            box-shadow: 
-                0 0 30px rgba(201, 169, 110, 0.2),
-                0 0 60px rgba(201, 169, 110, 0.1),
-                inset 0 0 30px rgba(0,0,0,0.3);
-            transition: all 0.5s ease;
-        }
-
-        .logo-img:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 
-                0 0 40px rgba(201, 169, 110, 0.3),
-                0 0 80px rgba(201, 169, 110, 0.15);
-        }
-
-        /* Founder Card */
-        .founder-card {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 50px 60px;
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            animation: fade-in-up 1.5s ease-out 0.3s both;
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-
-        @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .founder-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            opacity: 0.5;
-        }
-
-        .founder-card::after {
-            content: '';
-            position: absolute;
-            bottom: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(201, 169, 110, 0.03) 0%, transparent 60%);
-            pointer-events: none;
-        }
-
-        .card-shine {
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-            animation: shine 6s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        @keyframes shine {
-            0%, 100% { left: -100%; }
-            50% { left: 200%; }
-        }
-
-        /* Founder Name with Verified Badge */
-        .founder-name-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
-        .founder-label {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 400;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: var(--gold);
-            margin-bottom: 15px;
-            opacity: 0.8;
-        }
-
-        .founder-name {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.8rem;
-            font-weight: 300;
-            color: var(--white);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        .verified-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, #1DA1F2, #0d8bd9);
-            border-radius: 50%;
-            position: relative;
-            flex-shrink: 0;
-            animation: badge-pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 15px rgba(29, 161, 242, 0.4);
-        }
-
-        @keyframes badge-pulse {
-            0%, 100% { box-shadow: 0 0 15px rgba(29, 161, 242, 0.4); }
-            50% { box-shadow: 0 0 25px rgba(29, 161, 242, 0.7); }
-        }
-
-        .verified-badge i {
-            color: white;
-            font-size: 13px;
-        }
-
-        /* Divider */
-        .divider {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 0 auto 30px;
-            opacity: 0.6;
-        }
-
-        /* Quote Section */
-        .quote-section {
-            position: relative;
-            padding: 20px 0;
-        }
-
-        .quote-icon {
-            font-size: 2rem;
-            color: var(--gold);
-            opacity: 0.3;
-            margin-bottom: 15px;
-        }
-
-        .quote-text {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.3rem;
-            font-weight: 300;
-            font-style: italic;
-            line-height: 2;
-            color: var(--silver);
-            min-height: 80px;
-            transition: opacity 0.8s ease;
-        }
-
-        .quote-text.fade {
-            opacity: 0;
-        }
-
-        .quote-author {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 0.8rem;
-            color: var(--gold);
-            margin-top: 20px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-
-        /* Quote Navigation */
-        .quote-dots {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 25px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            cursor: pointer;
-            transition: all 0.4s ease;
-            border: none;
-        }
-
-        .dot.active {
-            background: var(--gold);
-            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
-            transform: scale(1.3);
-        }
-
-        .dot:hover {
-            background: rgba(201, 169, 110, 0.5);
-        }
-
-        /* Bottom Elements */
-        .bottom-section {
-            margin-top: 50px;
-            text-align: center;
-            animation: fade-in-up 1.5s ease-out 0.6s both;
-        }
-
-        .heart-animation {
-            font-size: 1.5rem;
-            color: var(--gold);
-            opacity: 0.4;
-            animation: heartbeat 2s ease-in-out infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); opacity: 0.4; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-        }
-
-        .tagline {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            font-style: italic;
-            color: var(--silver);
-            opacity: 0.5;
-            letter-spacing: 1px;
-        }
-
-        /* Footer */
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            z-index: 10;
-        }
-
-        .footer-text {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.15);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .founder-card {
-                padding: 35px 25px;
-            }
-            .founder-name {
-                font-size: 2rem;
-            }
-            .quote-text {
-                font-size: 1.1rem;
-            }
-            .logo-wrapper {
-                width: 110px;
-                height: 110px;
-            }
-            .logo-img {
-                width: 90px;
-                height: 90px;
-            }
-        }
-
-        /* Glitch effect on hover for name */
-        .founder-name-wrapper:hover .founder-name {
-            animation: glitch 0.3s ease;
-        }
-
-        @keyframes glitch {
-            0%, 100% { text-shadow: none; }
-            25% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,255,255,0.3); }
-            50% { text-shadow: -2px 0 rgba(255,0,0,0.3), 2px 0 rgba(0,255,255,0.3); }
-            75% { text-shadow: 2px 0 rgba(255,0,0,0.3), -2px 0 rgba(0,255,255,0.3); }
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--midnight);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(201, 169, 110, 0.3);
-            border-radius: 3px;
-        }
+        .upload-area { border: 2px dashed var(--border); border-radius: 32px; padding: 64px 32px; text-align: center; cursor: pointer; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); background: var(--bg-card); position: relative; overflow: hidden; margin-bottom: 40px; }
+        .upload-area::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.05), transparent 70%); opacity: 0; transition: opacity 0.5s; }
+        .upload-area:hover::before, .upload-area.dragover::before { opacity: 1; }
+        .upload-area:hover { border-color: rgba(99,102,241,0.2); background: var(--bg-card-hover); transform: translateY(-2px); }
+        .upload-area.dragover { border-color: var(--accent); background: rgba(99,102,241,0.04); transform: scale(1.005); }
+        .upload-illustration { width: 96px; height: 96px; border-radius: 28px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(34,211,238,0.1)); border: 1px solid rgba(99,102,241,0.1); display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 24px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1; }
+        .upload-area:hover .upload-illustration { transform: scale(1.15) rotate(-8deg); border-color: rgba(99,102,241,0.3); box-shadow: 0 0 40px rgba(99,102,241,0.15); }
+        .upload-area h3 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; margin-bottom: 8px; position: relative; z-index: 1; }
+        .upload-area p { color: var(--text-faint); font-size: 14px; margin-bottom: 20px; position: relative; z-index: 1; }
+        .upload-meta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+        .upload-meta span { padding: 6px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 100px; font-size: 12px; color: var(--text-faint); font-weight: 500; letter-spacing: 0.3px; }
+        #fileInput { display: none; }
+        .preview-wrap { display: none; margin-bottom: 40px; animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .preview-wrap.show { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .preview-frame { background: var(--bg-card); border: 1px solid var(--border); border-radius: 28px; overflow: hidden; position: relative; }
+        .preview-frame img { width: 100%; max-height: 480px; object-fit: contain; display: block; background: var(--bg-input); }
+        .preview-actions { position: absolute; bottom: 0; left: 0; right: 0; padding: 50px 24px 24px; background: linear-gradient(transparent, var(--bg-card) 60%); display: flex; justify-content: center; gap: 12px; }
+        .btn { padding: 14px 28px; border: none; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: inline-flex; align-items: center; gap: 10px; font-family: inherit; letter-spacing: 0.3px; }
+        .btn-main { background: linear-gradient(135deg, var(--accent), var(--cyan)); color: white; box-shadow: 0 4px 24px rgba(99,102,241,0.25), 0 0 0 1px rgba(255,255,255,0.1) inset; }
+        .btn-main:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 40px rgba(99,102,241,0.35), 0 0 0 1px rgba(255,255,255,0.15) inset; }
+        .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-ghost { background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: var(--border-hover); color: var(--text); }
+        .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 28px; padding: 60px 20px; animation: fadeIn 0.4s ease; }
+        .loading-wrap.show { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner-wrap { position: relative; width: 72px; height: 72px; }
+        .spinner-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); animation: spin 1.2s linear infinite; }
+        .spinner-ring:nth-child(2) { inset: 8px; border-top-color: var(--cyan); animation: spin 0.8s linear infinite reverse; }
+        .spinner-ring:nth-child(3) { inset: 16px; border-top-color: var(--pink); animation: spin 1.5s linear infinite; }
+        .spinner-core { position: absolute; inset: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--cyan)); opacity: 0.3; animation: core-pulse 2s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes core-pulse { 0%,100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.2); opacity: 0.5; } }
+        .loading-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: var(--text); }
+        .loading-sub { color: var(--text-faint); font-size: 13px; }
+        .loading-track { width: 280px; height: 4px; background: var(--bg-input); border-radius: 10px; overflow: hidden; position: relative; }
+        .loading-fill { height: 100%; width: 30%; background: linear-gradient(90deg, var(--accent), var(--cyan), var(--pink)); border-radius: 10px; animation: load-slide 2s ease-in-out infinite; background-size: 200% 100%; }
+        @keyframes load-slide { 0% { transform: translateX(-100%); } 50% { width: 60%; } 100% { transform: translateX(400%); } }
+        .steps { display: flex; gap: 40px; margin-top: 8px; }
+        .step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-faint); transition: color 0.3s; }
+        .step.active { color: var(--accent-bright); }
+        .step-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-input); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; transition: all 0.4s; }
+        .step.active .step-dot { background: linear-gradient(135deg, var(--accent), var(--cyan)); border-color: transparent; color: white; box-shadow: 0 0 20px rgba(99,102,241,0.3); animation: step-glow 2s ease-in-out infinite; }
+        @keyframes step-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 10px rgba(99,102,241,0); } }
+        .error-wrap { display: none; margin: 20px 0; padding: 18px 24px; background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.12); border-radius: 16px; color: var(--red); font-size: 14px; font-weight: 500; animation: shake 0.5s ease; }
+        .error-wrap.show { display: block; }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        .results-wrap { display: none; margin-bottom: 48px; animation: result-enter 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .results-wrap.show { display: block; }
+        @keyframes result-enter { from { opacity: 0; transform: translateY(40px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .results-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 28px; padding: 32px; position: relative; overflow: hidden; }
+        .results-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--cyan), var(--pink)); opacity: 0.6; }
+        .results-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+        .results-head-left { display: flex; align-items: center; gap: 14px; }
+        .results-head-icon { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--accent), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 30px rgba(99,102,241,0.2); }
+        .results-head-left h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+        .results-head-left p { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+        .confidence-wrap { text-align: right; }
+        .confidence-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 100px; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+        .conf-high { background: rgba(52,211,153,0.08); color: var(--green); border: 1px solid rgba(52,211,153,0.15); }
+        .conf-med { background: rgba(251,191,36,0.08); color: var(--orange); border: 1px solid rgba(251,191,36,0.15); }
+        .conf-low { background: rgba(248,113,113,0.08); color: var(--red); border: 1px solid rgba(248,113,113,0.15); }
+        .confidence-track { width: 160px; height: 5px; background: var(--bg-input); border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .confidence-fill { height: 100%; border-radius: 10px; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+        .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @media (max-width: 640px) { .result-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 32px; } .upload-area { padding: 48px 20px; } }
+        .result-cell { background: var(--bg-input); border: 1px solid var(--border); border-radius: 18px; padding: 18px 20px; transition: all 0.3s; }
+        .result-cell:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+        .result-cell.wide { grid-column: 1 / -1; }
+        .result-cell-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-faint); margin-bottom: 8px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .result-cell-value { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.5; }
+        .result-cell-value.desc { font-size: 14px; font-weight: 400; color: var(--text-dim); line-height: 1.7; }
+        .result-cell-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.5px; color: var(--cyan); }
+        .result-cell-value a { color: var(--cyan); text-decoration: none; }
+        .result-cell-value a:hover { text-decoration: underline; }
+        .map-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 32px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(34,211,238,0.1)); border: 1px solid rgba(99,102,241,0.2); border-radius: 16px; color: var(--accent-bright); text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.3s; letter-spacing: 0.3px; }
+        .map-btn:hover { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(34,211,238,0.15)); transform: translateY(-2px); box-shadow: 0 4px 24px rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); }
+        .globe-wrap { display: none; margin-bottom: 48px; animation: result-enter 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .globe-wrap.show { display: block; }
+        .globe-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 28px; padding: 24px; position: relative; overflow: hidden; }
+        .globe-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--cyan), var(--accent), var(--pink)); opacity: 0.6; }
+        .globe-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+        .globe-card-head-left { display: flex; align-items: center; gap: 12px; color: var(--accent-bright); }
+        .globe-card-head-left h3 { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+        .globe-card-head-left p { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+        .btn-sm { padding: 9px 16px; font-size: 12px; }
+        .globe-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .globe-mini-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; transition: all 0.25s; }
+        .globe-mini-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border-hover); }
+        .globe-mini-btn.active { background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(34,211,238,0.18)); border-color: rgba(99,102,241,0.35); color: var(--accent-bright); }
+        .globe-mini-btn-sep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+        .globe-canvas { width: 100%; height: 460px; border-radius: 20px; position: relative; cursor: grab; background: radial-gradient(circle at 50% 40%, rgba(99,102,241,0.07), transparent 70%); }
+        .globe-canvas:active { cursor: grabbing; }
+        .globe-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-faint); font-size: 13px; border-radius: 20px; z-index: 2; background: var(--bg-input); }
+        .globe-loading.hide { display: none; }
+        @media (max-width: 640px) { .globe-canvas { height: 340px; } }
+        .street-wrap { display: none; margin-bottom: 48px; animation: result-enter 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .street-wrap.show { display: block; }
+        .street-canvas { width: 100%; height: 460px; border-radius: 20px; position: relative; background: var(--bg-input); }
+        @media (max-width: 640px) { .street-canvas { height: 360px; } }
+        .leaflet-control-zoom a { background: var(--bg-card) !important; color: var(--text) !important; border-color: var(--border) !important; }
+        .leaflet-control-zoom a:hover { background: var(--bg-card-hover) !important; }
+        .leaflet-control-attribution { background: rgba(5,5,8,0.75) !important; color: var(--text-faint) !important; border-radius: 8px 0 0 0; }
+        .leaflet-control-attribution a { color: var(--accent-bright) !important; }
+        .leaflet-popup-content-wrapper { background: var(--bg-card) !important; color: var(--text) !important; border: 1px solid var(--border); border-radius: 14px !important; }
+        .leaflet-popup-tip { background: var(--bg-card) !important; }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 13px; margin: 10px 14px; }
+        .trexa-pin { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle, var(--cyan), var(--accent)); border: 2px solid #fff; box-shadow: 0 0 16px rgba(34,211,238,0.7); }
+        .history-wrap { display: none; margin-top: 48px; margin-bottom: 48px; }
+        .history-wrap.show { display: block; }
+        .history-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .history-list { display: flex; flex-direction: column; gap: 10px; }
+        .history-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; cursor: pointer; transition: all 0.3s; }
+        .history-row:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateX(4px); }
+        .history-thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: var(--bg-input); border: 1px solid var(--border); }
+        .history-info { flex: 1; }
+        .history-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .history-info p { font-size: 12px; color: var(--text-faint); }
+        .history-tag { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+        .ht-high { background: rgba(52,211,153,0.1); color: var(--green); }
+        .ht-med { background: rgba(251,191,36,0.1); color: var(--orange); }
+        .ht-low { background: rgba(248,113,113,0.1); color: var(--red); }
+        footer { text-align: center; padding: 40px 0 60px; border-top: 1px solid var(--border); }
+        footer .brand { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, var(--accent-bright), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        footer p { color: var(--text-faint); font-size: 12px; line-height: 1.8; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+        .glow-orb { position: fixed; width: 300px; height: 300px; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; z-index: 0; }
+        .orb-1 { background: var(--accent); top: 10%; right: 5%; animation: orb-float 20s ease-in-out infinite; }
+        .orb-2 { background: var(--cyan); bottom: 20%; left: 5%; animation: orb-float 25s ease-in-out infinite reverse; }
+        @keyframes orb-float { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-20px) scale(1.1); } 66% { transform: translate(-20px,30px) scale(0.9); } }
     </style>
 <base target="_blank">
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="bg-container">
-        <div class="bg-gradient"></div>
-        <div class="particles" id="particles"></div>
-        <div class="rain-container" id="rain"></div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-container">
-        <!-- Logo Section -->
-        <div class="logo-section">
-            <div class="logo-wrapper">
-                <div class="logo-glow"></div>
-                <div class="logo-ring"></div>
-                <img src="https://i.pinimg.com/736x/3c/45/0a/3c450aa81d2ba5a2cb375afb2aea69c1.jpg" alt="TrexA Logo" class="logo-img">
+    <div class="universe" id="stars"></div>
+    <div class="noise"></div>
+    <div class="grid-lines"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="app">
+        <nav>
+            <div class="logo">
+                <div class="logo-mark"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" style="stroke:#fff"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg></div>
+                <div class="logo-text">TREXA<span>SPY</span></div>
+            </div>
+            <div class="nav-badge">Trexa AI Aktif</div>
+        </nav>
+        <div class="hero">
+            <div class="hero-badge"><svg class="icon" width="14" height="14" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg> Yapay Zeka ile Konum Tespiti</div>
+            <h1>Fotograftaki <span class="gradient-text">Konumu</span> Bul</h1>
+            <p>Trexa AI teknolojisi ile fotografin cekildigi yeri analiz eder, sonucu gercek harita verisiyle dogrular.</p>
+        </div>
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg></div>
+                <h4>Yapay Zeka Analizi</h4>
+                <p>Mimari, bitki ortusu, tabelalar ve daha fazlasi</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3c2.5 2.5 4 6 4 9s-1.5 6.5-4 9"/><path d="M12 3c-2.5 2.5-4 6-4 9s1.5 6.5 4 9"/></svg></div>
+                <h4>Kuresel Kapsam</h4>
+                <p>Dunya capinda konum tespiti ve bolgesel analiz</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+                <h4>Aninda Sonuc</h4>
+                <p>Saniyeler icinde detayli konum bilgisi</p>
             </div>
         </div>
-
-        <!-- Founder Card -->
-        <div class="founder-card">
-            <div class="card-shine"></div>
-
-            <div class="founder-label">Kurucu</div>
-
-            <div class="founder-name-wrapper">
-                <h1 class="founder-name">TrexA</h1>
-                <div class="verified-badge" title="Doğrulanmış Hesap">
-                    <i class="fas fa-check"></i>
+        <div class="upload-area" id="dropZone">
+            <div class="upload-illustration"><svg class="icon" width="40" height="40" viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <h3>Fotografini Surukle & Birak</h3>
+            <p>veya alani tiklayarak dosya sec</p>
+            <div class="upload-meta"><span>JPG</span><span>PNG</span><span>WEBP</span><span>Max 16MB</span></div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        <div class="preview-wrap" id="previewWrap">
+            <div class="preview-frame">
+                <img id="previewImage" src="" alt="Onizleme">
+                <div class="preview-actions">
+                    <button class="btn btn-main" id="analyzeBtn"><span><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> Konumu Analiz Et</button>
+                    <button class="btn btn-ghost" id="clearBtn"><span><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span> Temizle</button>
                 </div>
             </div>
-
-            <div class="divider"></div>
-
-            <div class="quote-section">
-                <div class="quote-icon"><i class="fas fa-quote-left"></i></div>
-                <p class="quote-text" id="quoteText">"Bazı aşklar, ölüm bile bitiremez..."</p>
-                <div class="quote-author" id="quoteAuthor">— Bilinmeyen</div>
+        </div>
+        <div class="loading-wrap" id="loadingWrap">
+            <div class="spinner-wrap"><div class="spinner-ring"></div><div class="spinner-ring"></div><div class="spinner-ring"></div><div class="spinner-core"></div></div>
+            <div class="loading-title">Fotograf analiz ediliyor...</div>
+            <div class="loading-sub">Trexa AI gorsel ipuclarini inceliyor</div>
+            <div class="loading-track"><div class="loading-fill"></div></div>
+            <div class="steps">
+                <div class="step active" id="step1"><span class="step-dot">1</span><span>Gorsel Isleniyor</span></div>
+                <div class="step" id="step2"><span class="step-dot">2</span><span>AI Analizi</span></div>
+                <div class="step" id="step3"><span class="step-dot">3</span><span>Konum Tespiti</span></div>
             </div>
-
-            <div class="quote-dots" id="quoteDots"></div>
+        </div>
+        <div class="error-wrap" id="errorWrap"></div>
+        <div class="results-wrap" id="resultsWrap">
+            <div class="results-card">
+                <div class="results-head">
+                    <div class="results-head-left">
+                        <div class="results-head-icon"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" style="stroke:#fff"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+                        <div><h2>Tespit Edilen Konum</h2><p id="resultTime">Analiz tamamlandi</p></div>
+                    </div>
+                    <div class="confidence-wrap">
+                        <div class="confidence-badge" id="confBadge"><span id="confText">Yuksek Guven</span></div>
+                        <div class="confidence-track"><div class="confidence-fill" id="confBar"></div></div>
+                    </div>
+                </div>
+                <div class="result-grid">
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg> KONUM</div><div class="result-cell-value" id="locVal">-</div></div>
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> KOORDINATLAR</div><div class="result-cell-value mono" id="coordVal">-</div></div>
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M5 21V3"/><path d="M5 4h13l-3 4.5L18 13H5"/></svg> ULKE</div><div class="result-cell-value" id="countryVal">-</div></div>
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20"/><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="9" y1="2" x2="9" y2="22"/><line x1="15" y1="2" x2="15" y2="22"/></svg> SEHIR</div><div class="result-cell-value" id="cityVal">-</div></div>
+                    <div class="result-cell wide"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> DETAYLI ANALIZ</div><div class="result-cell-value desc" id="descVal">-</div></div>
+                    <div class="result-cell wide" id="verifyCell" style="display:none;"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg> HARITA DOGRULAMA</div><div class="result-cell-value" id="verifyVal">-</div></div>
+                    <div class="result-cell wide" id="evidenceCell" style="display:none;"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/><line x1="8" y1="6" x2="21" y2="6"/><line x1="13" y1="18" x2="21" y2="18"/></svg> KANIT LISTESI</div><div class="result-cell-value" id="evidenceVal" style="display:flex; flex-direction:column; gap:8px;">-</div></div>
+                    <div class="result-cell wide" id="altCell" style="display:none;"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> ELENEN ALTERNATIF KONUMLAR</div><div class="result-cell-value desc" id="altVal" style="display:flex; flex-direction:column; gap:6px;">-</div></div>
+                    <div class="result-cell wide"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 21 8 3 8"/></svg> MIMARI TARZ</div><div class="result-cell-value" id="archVal">-</div></div>
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 8 7c2-3 7-4 11-2-1 5-3 9-6 11-1 .7-2 1-2 1z"/><path d="M8 19c2-3 4-7 9-10"/></svg> BITKI ORTUSU</div><div class="result-cell-value" id="vegVal">-</div></div>
+                    <div class="result-cell"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1.5" x2="8" y2="3"/><line x1="2" y1="8" x2="3.5" y2="8"/><line x1="3.3" y1="3.3" x2="4.3" y2="4.3"/><path d="M18 19a4 4 0 0 0 0-8 5.4 5.4 0 0 0-10.3-1.3A4.5 4.5 0 0 0 6 19h12z"/></svg> IKLIM</div><div class="result-cell-value" id="climVal">-</div></div>
+                    <div class="result-cell wide"><div class="result-cell-label"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M20 13.5 13.5 20a2 2 0 0 1-2.8 0L3.5 12.8a2 2 0 0 1 0-2.8L10 3.5A2 2 0 0 1 11.4 3H18a2 2 0 0 1 2 2v6.6a2 2 0 0 1-.6 1.4z"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/></svg> DIL IPUCLARI</div><div class="result-cell-value" id="langVal">-</div></div>
+                    <div class="result-cell wide" style="text-align:center; padding: 12px;"><a class="map-btn" id="mapBtn" href="#" target="_blank"><span><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span> Google Maps'te Goruntule</a></div>
+                </div>
+            </div>
         </div>
 
-        <!-- Bottom Section -->
-        <div class="bottom-section">
-            <div class="heart-animation"><i class="fas fa-heart-broken"></i></div>
-            <p class="tagline">Her acı, bir şiirdir yazılmamış...</p>
+        <div class="globe-wrap" id="globeWrap">
+            <div class="globe-card">
+                <div class="globe-card-head">
+                    <div class="globe-card-head-left">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3c2.5 2.5 4 6 4 9s-1.5 6.5-4 9"/><path d="M12 3c-2.5 2.5-4 6-4 9s1.5 6.5 4 9"/></svg>
+                        <div><h3>3D Konum Haritasi</h3><p>Surukle: dondur &middot; Tekerlek: yakinlastir/uzaklastir</p></div>
+                    </div>
+                    <div class="globe-actions">
+                        <button class="globe-mini-btn active" id="modeTransparentBtn" title="Seffaf / Holografik Mod"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
+                        <button class="globe-mini-btn" id="modeSatelliteBtn" title="Uydu Gorunumu"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="16" r="2"/><path d="M12 14V8"/><path d="M8 8a4 4 0 0 1 8 0"/><path d="M5 5a8 8 0 0 1 14 0"/></svg></button>
+                        <div class="globe-mini-btn-sep"></div>
+                        <button class="globe-mini-btn" id="autoRotateBtn" title="Otomatik Dondur"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></button>
+                        <button class="globe-mini-btn" id="fullscreenBtn" title="Tam Ekran"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+                        <div class="globe-mini-btn-sep"></div>
+                        <button class="btn btn-ghost btn-sm" id="globeResetBtn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg> Konuma Don</button>
+                    </div>
+                </div>
+                <div id="globeViz" class="globe-canvas"><div class="globe-loading" id="globeLoading">Harita verisi yukleniyor...</div></div>
+            </div>
         </div>
+        <div class="street-wrap" id="streetWrap">
+            <div class="globe-card">
+                <div class="globe-card-head">
+                    <div class="globe-card-head-left">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                        <div><h3>Sokak Seviyesi Harita</h3><p>Gercek sokak adlari ve bina sinirlari &middot; OpenStreetMap verisi</p></div>
+                    </div>
+                    <div class="globe-actions">
+                        <button class="globe-mini-btn active" id="layerDarkBtn" title="Karanlik Harita"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+                        <button class="globe-mini-btn" id="layerStreetBtn" title="Sokak Gorunumu (Klasik)"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+                        <div class="globe-mini-btn-sep"></div>
+                        <button class="globe-mini-btn" id="streetFullscreenBtn" title="Tam Ekran"><svg class="icon" width="16" height="16" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+                        <button class="btn btn-ghost btn-sm" id="streetResetBtn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg> Konuma Don</button>
+                    </div>
+                </div>
+                <div id="streetMap" class="street-canvas"></div>
+            </div>
+        </div>
+        <div class="history-wrap" id="historyWrap">
+            <div class="history-title"><svg class="icon" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> Son Analizler</div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+        <footer>
+            <div class="brand">TREXA SPY</div>
+            <p>Trexa AI ile Cografi Konum Tespiti</p>
+            <p style="opacity:0.5; margin-top:6px;">Sadece egitim ve arastirma amaclidir.</p>
+        </footer>
     </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <p class="footer-text">© 2026 TrexA — Aşk Acısı</p>
-    </div>
-
     <script>
-        // Heartbreak Quotes
-        const quotes = [
-            { text: "Bazı aşklar, ölüm bile bitiremez...", author: "Bilinmeyen" },
-            { text: "Seni unutmak için öğrendiğim her şey, seni daha çok hatırlatmaya yetiyor.", author: "TrexA" },
-            { text: "Gözlerin hâlâ rüyalarımda, ama artık uyanınca yanımda değilsin.", author: "Bilinmeyen" },
-            { text: "Kalbimdeki boşluk, seninle doluydu bir zamanlar...", author: "TrexA" },
-            { text: "Sessizliğin en acı tarafı, senin sesini özlemek değil; artık duyamayacağımı bilmek.", author: "Bilinmeyen" },
-            { text: "Her gece yıldızlara bakıyorum, belki sen de bakıyorsundur diye...", author: "TrexA" },
-            { text: "Ayrılık değil acı veren, ayrıldıktan sonra hatırlamak.", author: "Bilinmeyen" },
-            { text: "Sen gittin, ama kokun hâlâ her yerde...", author: "TrexA" }
-        ];
 
-        let currentQuote = 0;
-        const quoteText = document.getElementById('quoteText');
-        const quoteAuthor = document.getElementById('quoteAuthor');
-        const quoteDots = document.getElementById('quoteDots');
+        // ===== CONFIG =====
+        const GROQ_API_KEY = "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";
+        const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+        const WORKING_MODEL = "qwen/qwen3.6-27b";
+        const TREXA_ENGINE_NAME = "Trexa Vision Engine";
+        const COUNTRIES_GEOJSON_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson';
 
-        // Create dots
-        quotes.forEach((_, i) => {
-            const dot = document.createElement('button');
-            dot.className = 'dot' + (i === 0 ? ' active' : '');
-            dot.onclick = () => setQuote(i);
-            quoteDots.appendChild(dot);
+        // ===== STAR FIELD =====
+        const stars = document.getElementById('stars');
+        for (let i = 0; i < 60; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+            star.style.animationDelay = Math.random() * 4 + 's';
+            stars.appendChild(star);
+        }
+
+        // ===== DOM =====
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewWrap = document.getElementById('previewWrap');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loadingWrap = document.getElementById('loadingWrap');
+        const resultsWrap = document.getElementById('resultsWrap');
+        const errorWrap = document.getElementById('errorWrap');
+        const historyWrap = document.getElementById('historyWrap');
+        const historyList = document.getElementById('historyList');
+        const locVal = document.getElementById('locVal');
+        const coordVal = document.getElementById('coordVal');
+        const countryVal = document.getElementById('countryVal');
+        const cityVal = document.getElementById('cityVal');
+        const descVal = document.getElementById('descVal');
+        const archVal = document.getElementById('archVal');
+        const vegVal = document.getElementById('vegVal');
+        const climVal = document.getElementById('climVal');
+        const langVal = document.getElementById('langVal');
+        const verifyCell = document.getElementById('verifyCell');
+        const verifyVal = document.getElementById('verifyVal');
+        const evidenceCell = document.getElementById('evidenceCell');
+        const evidenceVal = document.getElementById('evidenceVal');
+        const altCell = document.getElementById('altCell');
+        const altVal = document.getElementById('altVal');
+        const globeWrap = document.getElementById('globeWrap');
+        const globeViz = document.getElementById('globeViz');
+        const globeLoading = document.getElementById('globeLoading');
+        const globeResetBtn = document.getElementById('globeResetBtn');
+        const modeTransparentBtn = document.getElementById('modeTransparentBtn');
+        const modeSatelliteBtn = document.getElementById('modeSatelliteBtn');
+        const autoRotateBtn = document.getElementById('autoRotateBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const streetWrap = document.getElementById('streetWrap');
+        const streetMapEl = document.getElementById('streetMap');
+        const layerDarkBtn = document.getElementById('layerDarkBtn');
+        const layerStreetBtn = document.getElementById('layerStreetBtn');
+        const streetFullscreenBtn = document.getElementById('streetFullscreenBtn');
+        const streetResetBtn = document.getElementById('streetResetBtn');
+        const confBadge = document.getElementById('confBadge');
+        const confText = document.getElementById('confText');
+        const confBar = document.getElementById('confBar');
+        const mapBtn = document.getElementById('mapBtn');
+        const resultTime = document.getElementById('resultTime');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+
+        let currentFile = null;
+        let currentImageData = null;
+        let history = JSON.parse(localStorage.getItem('trexaspy_history') || '[]');
+        renderHistory();
+
+        // ===== EVENTS =====
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) { showError('Gecerli bir resim secin (JPG, PNG, WEBP).'); return; }
+            if (file.size > 16 * 1024 * 1024) { showError('Dosya 16MB dan buyuk olamaz.'); return; }
+            currentFile = file;
+            hideError();
+            const reader = new FileReader();
+            reader.onload = e => {
+                currentImageData = e.target.result;
+                previewImage.src = currentImageData;
+                previewWrap.classList.add('show');
+                resultsWrap.classList.remove('show');
+                dropZone.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        clearBtn.addEventListener('click', () => {
+            currentFile = null; currentImageData = null;
+            fileInput.value = ''; previewImage.src = '';
+            previewWrap.classList.remove('show');
+            resultsWrap.classList.remove('show');
+            loadingWrap.classList.remove('show');
+            dropZone.style.display = 'block';
+            hideError(); resetSteps();
         });
 
-        function setQuote(index) {
-            quoteText.classList.add('fade');
-            setTimeout(() => {
-                currentQuote = index;
-                quoteText.textContent = '"' + quotes[index].text + '"';
-                quoteAuthor.textContent = '— ' + quotes[index].author;
-                quoteText.classList.remove('fade');
-
-                document.querySelectorAll('.dot').forEach((d, i) => {
-                    d.classList.toggle('active', i === index);
-                });
-            }, 400);
-        }
-
-        // Auto-rotate quotes
-        setInterval(() => {
-            setQuote((currentQuote + 1) % quotes.length);
-        }, 6000);
-
-        // Generate Particles
-        const particlesContainer = document.getElementById('particles');
-        for (let i = 0; i < 50; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
-            particle.style.animationDelay = Math.random() * 10 + 's';
-            particle.style.width = (Math.random() * 3 + 1) + 'px';
-            particle.style.height = particle.style.width;
-            particlesContainer.appendChild(particle);
-        }
-
-        // Generate Rain
-        const rainContainer = document.getElementById('rain');
-        for (let i = 0; i < 80; i++) {
-            const drop = document.createElement('div');
-            drop.className = 'rain-drop';
-            drop.style.left = Math.random() * 100 + '%';
-            drop.style.animationDuration = (Math.random() * 1 + 0.5) + 's';
-            drop.style.animationDelay = Math.random() * 2 + 's';
-            drop.style.opacity = Math.random() * 0.5 + 0.2;
-            rainContainer.appendChild(drop);
-        }
-
-        // Parallax effect on mouse move
-        document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 20;
-            const y = (e.clientY / window.innerHeight - 0.5) * 20;
-
-            document.querySelector('.founder-card').style.transform = 
-                `translate(${x * 0.5}px, ${y * 0.5}px)`;
-            document.querySelector('.logo-wrapper').style.transform = 
-                `translate(${x * 0.3}px, ${y * 0.3}px)`;
+        analyzeBtn.addEventListener('click', async () => {
+            if (!currentFile || !currentImageData) return;
+            analyzeBtn.disabled = true;
+            resultsWrap.classList.remove('show');
+            loadingWrap.classList.add('show');
+            hideError(); resetSteps();
+            setTimeout(() => activateStep(2), 1200);
+            setTimeout(() => activateStep(3), 2800);
+            try {
+                const result = await analyzeImage(currentImageData);
+                loadingWrap.classList.remove('show');
+                if (result.error) { showError('Hata: ' + result.error); analyzeBtn.disabled = false; resetSteps(); return; }
+                showResults(result);
+                addHistory(result, currentImageData);
+            } catch (err) {
+                loadingWrap.classList.remove('show');
+                showError('Baglanti hatasi: ' + err.message);
+                resetSteps();
+            }
+            analyzeBtn.disabled = false;
         });
 
-        // Typewriter effect on load for first quote
-        window.addEventListener('load', () => {
-            const text = quotes[0].text;
-            quoteText.textContent = '';
-            let i = 0;
-            const typeInterval = setInterval(() => {
-                if (i < text.length) {
-                    quoteText.textContent += text.charAt(i);
-                    i++;
-                } else {
-                    clearInterval(typeInterval);
-                    quoteText.textContent = '"' + text + '"';
+        // ===== IMAGE ANALYSIS (Direct Groq API Call) =====
+        async function analyzeImage(imageDataUrl) {
+            // Optimize image
+            const optimizedBase64 = await optimizeImage(imageDataUrl);
+
+            const prompt = `Sen Trexa'nin cografi konum analiz uzmanisin. Bir adli bilisim (forensic) dedektifi gibi calis: fotograftaki HER kucuk detayi tek tek incele, hicbir ipucunu atlama, ve sonuca sadece birden fazla bagimsiz kanit birbirini dogruladiginda yuksek guvenle ulas.
+
+Asagidaki KATEGORILERIN HER BIRINI tek tek tara, gordugun her seyi not al:
+1. Mimari: bina yuksekligi, cephe malzemesi (tas/tugla/beton/ahsap), cati tipi (duz/kiremitli/egimli), pencere/balkon stili, kapi tasarimi, bina rengi ve sivasi, mimari donem/uslup
+2. Tabela ve yazilar: dil, alfabe, font stili, marka/zincir isimleri (varsa), yol/sokak isimleri, ticari isletme turleri
+3. Araclar: plaka formati/rengi/boyutu, arac markalari/modelleri (bolgesel yaygin modeller), trafik isaretleri tipi ve tasarimi, yol cizgileri/kenar taslari
+4. Dogal cevre: bitki ortusu turleri (palmiye/comez/zeytinAgaci/igne yaprakli vs), arazi yapisi, dag/tepe/deniz silueti, gunesin acisi ve golge yonu, hava durumu ve bulutlar
+5. Insan unsurlari: kiyafet tarzi, kalabaliktaki insan yogunlugu/davranisi, gorulen aktiviteler
+6. Altyapi: elektrik direkleri ve kablo dizilimi, sokak lambasi tasarimi, kaldirim/bordur tasarimi, canak anten varligi, bina numaralandirma sistemi
+7. Bilinen yapilar/simgeler: taninabilir landmark, dini yapi tarzi (cami/kilise/sinagog mimarisi -> bolge ipucu), bayrak (varsa)
+8. Zemin ve doku: yol kaplamasi turu (asfalt/parke/beton), toprak/kum rengi
+
+ANALIZ KURALLARI:
+- Once TUM kategorileri tek tek gez ve gordugun somut detaylari kaydet (evidence listesi).
+- Sonra bu kanitlari CAPRAZ KONTROL et: birbiriyle CELISEN ipucu var mi? (orn. tropikal bitki + kuzey Avrupa mimarisi celisir, boyle durumda guven skorunu dusur).
+- En az 3 bagimsiz kategoriden (mimari+dil+bitki ortusu gibi) tutarli kanit varsa Yuksek guven ver, sadece 1-2 zayif ipucu varsa Dusuk/Orta guven ver.
+- Eger spesifik sehir/mahalle seviyesinde emin DEGILSEN, ulke/bolge seviyesinde kal ve confidence_score'u dusur - ASLA olmayan bir kesinlik uretme.
+- Coordinates alaninda tahminin somut bir yerlesim yerine (sehir merkezi, mahalle, koy) karsilik gelmeli; tamamen belirsizse null birak.
+- "alternative_candidates" alaninda dikkate alip ELEDIGIN en az 1 farkli olasi konumu ve neden elendigini belirt (bu, analiz derinligini gosterir).
+
+Cevabi SADECE JSON formatinda ver, ekstra metin, aciklama, on soz veya dusunme adimi YAZMA. Dogrudan asagidaki yapida bir JSON nesnesi don:
+
+{
+    "location": "Ulke, Sehir, Bolge/Mahalle (mumkun oldugunca spesifik, ama asla tahmini kesinlik gibi sunma)",
+    "description": "Detayli analiz. Hangi kanitlarin hangi sonuca goturdugunu adim adim anlat.",
+    "evidence": [
+        {"category": "Mimari", "detail": "gozlemledigin somut detay"},
+        {"category": "Tabela/Dil", "detail": "..."},
+        {"category": "Arac/Plaka", "detail": "..."},
+        {"category": "Bitki Ortusu", "detail": "..."},
+        {"category": "Altyapi", "detail": "..."}
+    ],
+    "alternative_candidates": [
+        {"location": "elenen alternatif konum", "reason_rejected": "neden elendigi"}
+    ],
+    "confidence": "Yuksek / Orta / Dusuk",
+    "confidence_score": 85,
+    "coordinates": {"lat": 41.0082, "lng": 28.9784},
+    "country": "Turkiye",
+    "city": "Istanbul",
+    "landmarks": ["Ayasofya"],
+    "climate": "Akdeniz iklimi",
+    "language_hints": "Turkce tabelalar",
+    "vehicle_plates": "TR formati",
+    "architecture_style": "Osmanli mimarisi",
+    "vegetation": "Zeytin agaclari",
+    "timezone": "UTC+3",
+    "currency": "TRY",
+    "population": "15.8 milyon",
+    "elevation": "39m"
+}
+
+Emin degilsen coordinates null birak. Guven skoru 0-100, ve bu skoru SADECE evidence listendeki kanit sayisi ve tutarliligina gore belirle.`;
+
+            const response = await fetch(GROQ_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + GROQ_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: WORKING_MODEL,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + optimizedBase64 } }
+                            ]
+                        }
+                    ],
+                    max_completion_tokens: 3500,
+                    temperature: 0.3,
+                    reasoning_effort: "none",
+                    response_format: { type: "json_object" }
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error?.message || 'Groq API Hatasi: ' + response.status);
+            }
+
+            const data = await response.json();
+            const rawContent = data.choices[0].message.content;
+            let result = parseResponse(rawContent);
+
+            // Map verification
+            result.map_verification = await verifyOnMap(result);
+            result.analyzed_at = new Date().toISOString();
+            result.model_used = TREXA_ENGINE_NAME;
+
+            return result;
+        }
+
+        async function optimizeImage(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    const maxSize = 1600;
+                    if (Math.max(w, h) > maxSize) {
+                        const ratio = maxSize / Math.max(w, h);
+                        w = Math.floor(w * ratio);
+                        h = Math.floor(h * ratio);
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    // Compress to stay under limit
+                    let quality = 0.85;
+                    let base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+                    while (base64.length > 3.5 * 1024 * 1024 && quality > 0.3) {
+                        quality -= 0.1;
+                        base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+                    }
+                    resolve(base64);
+                };
+                img.src = dataUrl;
+            });
+        }
+
+        function parseResponse(text) {
+            if (!text) return defaultResponse('AI yanit vermedi');
+            try {
+                const cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\n/g, ' ');
+                const match = cleaned.match(/\{[\s\S]*\}/);
+                if (match) {
+                    const result = JSON.parse(match[0]);
+                    const keys = ['location','description','confidence','country','city','architecture_style','vegetation','climate','language_hints'];
+                    keys.forEach(k => { if (!result[k]) result[k] = 'Belirtilmemis'; });
+                    if (!result.confidence_score) {
+                        const conf = result.confidence || 'Dusuk';
+                        result.confidence_score = conf.includes('Yuksek') ? 85 : (conf.includes('Orta') ? 50 : 20);
+                    }
+                    if (!Array.isArray(result.evidence)) result.evidence = [];
+                    if (!Array.isArray(result.alternative_candidates)) result.alternative_candidates = [];
+                    return result;
                 }
-            }, 50);
+                return defaultResponse(text.substring(0, 500));
+            } catch (e) {
+                return defaultResponse(text.substring(0, 500));
+            }
+        }
+
+        function defaultResponse(desc) {
+            return {
+                location: 'Tespit edilemedi',
+                description: desc,
+                confidence: 'Dusuk',
+                confidence_score: 10,
+                country: 'Bilinmiyor',
+                city: 'Bilinmiyor',
+                architecture_style: 'Belirtilmemis',
+                vegetation: 'Belirtilmemis',
+                climate: 'Belirtilmemis',
+                language_hints: 'Belirtilmemis',
+                evidence: [],
+                alternative_candidates: []
+            };
+        }
+
+        // ===== MAP VERIFICATION =====
+        async function verifyOnMap(result) {
+            const queryParts = [result.location, result.city, result.country].filter(p => p && !['Belirtilmemis','Bilinmiyor','Tespit edilemedi'].includes(p));
+            const query = [...new Set(queryParts)].join(', ');
+            if (!query) return { durum: 'Sorgu yetersiz', eslesti: false };
+            try {
+                const resp = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1&addressdetails=1', {
+                    headers: { 'User-Agent': 'TrexaSpy/2.0 (konum-dogrulama)' }
+                });
+                const data = await resp.json();
+                if (!data || !data.length) return { durum: 'Haritada bulunamadi', eslesti: false, sorgu: query };
+                const place = data[0];
+                const mapLat = parseFloat(place.lat), mapLng = parseFloat(place.lon);
+                const info = {
+                    durum: 'Haritada bulundu',
+                    eslesti: true,
+                    sorgu: query,
+                    harita_adresi: place.display_name || query,
+                    harita_koordinatlari: { lat: mapLat, lng: mapLng }
+                };
+                const aiCoords = result.coordinates;
+                if (aiCoords && aiCoords.lat != null && aiCoords.lng != null) {
+                    const distance = haversineKm(aiCoords.lat, aiCoords.lng, mapLat, mapLng);
+                    info.fark_km = Math.round(distance * 10) / 10;
+                    info.tutarli = distance < 75;
+                } else {
+                    info.tutarli = true;
+                }
+                return info;
+            } catch (e) {
+                return { durum: 'Dogrulama yapilamadi (' + e.name + ')', eslesti: false };
+            }
+        }
+
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const R = 6371.0;
+            const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+            const dphi = (lat2 - lat1) * Math.PI / 180;
+            const dlmb = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dphi / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dlmb / 2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(a));
+        }
+
+        // ===== SHOW RESULTS =====
+        function showResults(data) {
+            locVal.textContent = data.location || 'Tespit edilemedi';
+            countryVal.textContent = data.country || 'Bilinmiyor';
+            cityVal.textContent = data.city || 'Bilinmiyor';
+            descVal.textContent = data.description || 'Detayli analiz yapilamadi.';
+            archVal.textContent = data.architecture_style || 'Belirtilmemis';
+            vegVal.textContent = data.vegetation || 'Belirtilmemis';
+            climVal.textContent = data.climate || 'Belirtilmemis';
+            langVal.textContent = data.language_hints || 'Belirtilmemis';
+            resultTime.textContent = 'Analiz tamamlandi - ' + new Date().toLocaleTimeString('tr-TR');
+
+            if (Array.isArray(data.evidence) && data.evidence.length) {
+                evidenceCell.style.display = 'block';
+                evidenceVal.innerHTML = data.evidence.map(ev => {
+                    const cat = ev.category || 'Kanit';
+                    const det = ev.detail || '';
+                    return '<div style="display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--text-dim); line-height:1.5;">' +
+                        '<span style="flex-shrink:0; padding:2px 10px; border-radius:100px; background:rgba(99,102,241,0.1); color:var(--accent-bright); font-weight:600; font-size:11px; white-space:nowrap;">' + escapeHtml(cat) + '</span>' +
+                        '<span>' + escapeHtml(det) + '</span></div>';
+                }).join('');
+            } else { evidenceCell.style.display = 'none'; }
+
+            if (Array.isArray(data.alternative_candidates) && data.alternative_candidates.length) {
+                altCell.style.display = 'block';
+                altVal.innerHTML = data.alternative_candidates.map(alt => {
+                    return '<div><strong style="color:var(--text);">' + escapeHtml(alt.location || '') + '</strong> &mdash; ' + escapeHtml(alt.reason_rejected || '') + '</div>';
+                }).join('');
+            } else { altCell.style.display = 'none'; }
+
+            const mv = data.map_verification;
+            if (mv) {
+                verifyCell.style.display = 'block';
+                if (mv.eslesti) {
+                    let html = '<div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">' +
+                        '<span style="padding:3px 12px; border-radius:100px; font-size:11px; font-weight:700; background:rgba(52,211,153,0.1); color:var(--green);">Haritada Bulundu</span>';
+                    if (mv.fark_km != null) {
+                        html += '<span style="padding:3px 12px; border-radius:100px; font-size:11px; font-weight:700; background:' + (mv.tutarli ? 'rgba(52,211,153,0.1); color:var(--green)' : 'rgba(251,191,36,0.1); color:var(--orange)') + ';">Tahmin ile fark: ' + mv.fark_km + ' km</span>';
+                    }
+                    html += '</div><div style="font-size:13px; color:var(--text-dim); line-height:1.5;">' + escapeHtml(mv.harita_adresi || '') + '</div>';
+                    verifyVal.innerHTML = html;
+                } else {
+                    verifyVal.innerHTML = '<span style="padding:3px 12px; border-radius:100px; font-size:11px; font-weight:700; background:rgba(248,113,113,0.1); color:var(--red);">' + escapeHtml(mv.durum || 'Dogrulanamadi') + '</span>';
+                }
+            } else { verifyCell.style.display = 'none'; }
+
+            if (data.coordinates && data.coordinates.lat != null && data.coordinates.lng != null) {
+                const lat = data.coordinates.lat, lng = data.coordinates.lng;
+                coordVal.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+                mapBtn.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+                mapBtn.style.display = 'inline-flex';
+                updateGlobe({ lat, lng }, data.location || '');
+                updateStreetMap({ lat, lng }, data.location || '');
+            } else {
+                coordVal.textContent = 'Koordinat bulunamadi';
+                mapBtn.style.display = 'none';
+                updateGlobe(null);
+                updateStreetMap(null);
+            }
+
+            const conf = data.confidence || 'Dusuk';
+            const score = data.confidence_score || 0;
+            confText.textContent = conf + ' Guven (' + score + '%)';
+            confBadge.className = 'confidence-badge';
+            if (conf.includes('Yuksek') || score >= 70) {
+                confBadge.classList.add('conf-high');
+                confBar.style.background = 'linear-gradient(90deg, #34d399, #10b981)';
+            } else if (conf.includes('Orta') || score >= 40) {
+                confBadge.classList.add('conf-med');
+                confBar.style.background = 'linear-gradient(90deg, #fbbf24, #d97706)';
+            } else {
+                confBadge.classList.add('conf-low');
+                confBar.style.background = 'linear-gradient(90deg, #f87171, #dc2626)';
+            }
+            setTimeout(() => { confBar.style.width = score + '%'; }, 200);
+            resultsWrap.classList.add('show');
+            resultsWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function addHistory(data, img) {
+            history.unshift({
+                location: data.location || 'Bilinmiyor',
+                confidence: data.confidence || 'Dusuk',
+                image: img,
+                time: new Date().toISOString(),
+                coordinates: data.coordinates
+            });
+            if (history.length > 10) history.pop();
+            localStorage.setItem('trexaspy_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (!history.length) { historyWrap.classList.remove('show'); return; }
+            historyWrap.classList.add('show');
+            historyList.innerHTML = history.map((item, i) => {
+                const c = item.confidence || 'Dusuk';
+                let cls = 'ht-low';
+                if (c.includes('Yuksek')) cls = 'ht-high';
+                else if (c.includes('Orta')) cls = 'ht-med';
+                return '<div class="history-row" onclick="loadHist(' + i + ')">' +
+                    '<img class="history-thumb" src="' + item.image + '">' +
+                    '<div class="history-info"><h4>' + item.location + '</h4>' +
+                    '<p>' + new Date(item.time).toLocaleString('tr-TR') + '</p></div>' +
+                    '<span class="history-tag ' + cls + '">' + c + '</span></div>';
+            }).join('');
+        }
+
+        window.loadHist = function(i) {
+            const item = history[i];
+            if (!item) return;
+            currentImageData = item.image;
+            previewImage.src = item.image;
+            previewWrap.classList.add('show');
+            dropZone.style.display = 'none';
+            showResults({
+                location: item.location,
+                confidence: item.confidence,
+                coordinates: item.coordinates,
+                description: 'Onceki analiz sonucu.',
+                country: '', city: '', architecture_style: '', vegetation: '', climate: '', language_hints: ''
+            });
+        };
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // ===== 3D GLOBE =====
+        let globeInstance = null;
+        let countriesLoaded = false;
+        let lastDetectedCoords = null;
+
+        function initGlobe() {
+            if (globeInstance || typeof Globe === 'undefined') return;
+            globeInstance = Globe()(globeViz)
+                .backgroundColor('rgba(0,0,0,0)')
+                .showAtmosphere(true)
+                .atmosphereColor('#818cf8')
+                .atmosphereAltitude(0.22)
+                .polygonAltitude(0.006)
+                .pointColor(() => '#22d3ee')
+                .pointAltitude(0.012)
+                .pointRadius(0.55)
+                .pointLabel(d => d.label || '')
+                .ringColor(() => t => `rgba(34,211,238,${Math.max(0, 1 - t)})`)
+                .ringMaxRadius(5)
+                .ringPropagationSpeed(2.2)
+                .ringRepeatPeriod(800);
+            sizeGlobe();
+            globeInstance.pointOfView({ lat: 20, lng: 15, altitude: 2.4 }, 0);
+            window.addEventListener('resize', sizeGlobe);
+            applyTransparentMode();
+        }
+
+        function sizeGlobe() {
+            if (!globeInstance) return;
+            const w = globeViz.clientWidth || 600;
+            const h = globeViz.clientHeight || 460;
+            globeInstance.width(w).height(h);
+        }
+
+        async function loadCountriesOnce() {
+            if (countriesLoaded) return;
+            globeLoading.classList.remove('hide');
+            try {
+                const r = await fetch(COUNTRIES_GEOJSON_URL);
+                const geo = await r.json();
+                const features = (geo.features || []).filter(f => f.properties && f.properties.ISO_A2 !== 'AQ');
+                globeInstance.polygonsData(features);
+                countriesLoaded = true;
+                globeLoading.classList.add('hide');
+            } catch (err) {
+                globeLoading.textContent = 'Harita verisi yuklenemedi';
+            }
+        }
+
+        async function updateGlobe(coords, label) {
+            if (!coords || coords.lat == null || coords.lng == null) {
+                globeWrap.classList.remove('show');
+                return;
+            }
+            globeWrap.classList.add('show');
+            initGlobe();
+            if (!globeInstance) {
+                globeLoading.textContent = '3D harita kutuphanesi yuklenemedi';
+                globeLoading.classList.remove('hide');
+                return;
+            }
+            sizeGlobe();
+            await loadCountriesOnce();
+            sizeGlobe();
+            const { lat, lng } = coords;
+            lastDetectedCoords = { lat, lng };
+            globeInstance.pointsData([{ lat, lng, label: label || '' }]).ringsData([{ lat, lng }]);
+            globeInstance.pointOfView({ lat, lng, altitude: 2.4 }, 0);
+            setTimeout(() => { globeInstance.pointOfView({ lat, lng, altitude: 0.35 }, 3200); }, 200);
+        }
+
+        // ===== STREET MAP =====
+        let streetMapInstance = null;
+        let streetMarker = null;
+        let darkTileLayer = null;
+        let streetTileLayer = null;
+        let lastStreetCoords = null;
+
+        function initStreetMap() {
+            if (streetMapInstance || typeof L === 'undefined') return;
+            streetMapInstance = L.map(streetMapEl, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([20, 15], 3);
+            darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd', maxZoom: 20,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            });
+            streetTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                subdomains: 'abc', maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            });
+            darkTileLayer.addTo(streetMapInstance);
+            window.addEventListener('resize', () => streetMapInstance && streetMapInstance.invalidateSize());
+        }
+
+        function trexaPinIcon() {
+            return L.divIcon({ className: '', html: '<div class="trexa-pin"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
+        }
+
+        async function updateStreetMap(coords, label) {
+            if (!coords || coords.lat == null || coords.lng == null) {
+                streetWrap.classList.remove('show');
+                return;
+            }
+            streetWrap.classList.add('show');
+            initStreetMap();
+            if (!streetMapInstance) return;
+            setTimeout(() => streetMapInstance.invalidateSize(), 50);
+            const { lat, lng } = coords;
+            lastStreetCoords = { lat, lng };
+            if (streetMarker) streetMapInstance.removeLayer(streetMarker);
+            streetMarker = L.marker([lat, lng], { icon: trexaPinIcon() }).addTo(streetMapInstance);
+            if (label) streetMarker.bindPopup('<strong>' + escapeHtml(label) + '</strong>');
+            streetMapInstance.setView([lat, lng], 4, { animate: false });
+            setTimeout(() => { streetMapInstance.flyTo([lat, lng], 16, { duration: 2.5 }); }, 200);
+        }
+
+        function setStreetLayer(which) {
+            if (!streetMapInstance) return;
+            if (which === 'dark') {
+                streetMapInstance.removeLayer(streetTileLayer);
+                darkTileLayer.addTo(streetMapInstance);
+                layerDarkBtn.classList.add('active');
+                layerStreetBtn.classList.remove('active');
+            } else {
+                streetMapInstance.removeLayer(darkTileLayer);
+                streetTileLayer.addTo(streetMapInstance);
+                layerStreetBtn.classList.add('active');
+                layerDarkBtn.classList.remove('active');
+            }
+        }
+        layerDarkBtn.addEventListener('click', () => setStreetLayer('dark'));
+        layerStreetBtn.addEventListener('click', () => setStreetLayer('street'));
+        streetResetBtn.addEventListener('click', () => {
+            if (streetMapInstance && lastStreetCoords) {
+                streetMapInstance.flyTo([lastStreetCoords.lat, lastStreetCoords.lng], 16, { duration: 1.5 });
+            }
         });
+        streetFullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                (streetMapEl.requestFullscreen || streetMapEl.webkitRequestFullscreen || function(){}).call(streetMapEl);
+            } else {
+                (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            setTimeout(() => streetMapInstance && streetMapInstance.invalidateSize(), 150);
+        });
+        globeResetBtn.addEventListener('click', () => {
+            if (globeInstance && lastDetectedCoords) {
+                globeInstance.pointOfView({ lat: lastDetectedCoords.lat, lng: lastDetectedCoords.lng, altitude: 0.35 }, 1500);
+            }
+        });
+
+        let globeMode = 'transparent';
+        function applyTransparentMode() {
+            if (!globeInstance) return;
+            globeMode = 'transparent';
+            globeInstance.globeImageUrl(null).bumpImageUrl(null).backgroundImageUrl(null)
+                .polygonCapColor(() => 'rgba(99,102,241,0.05)')
+                .polygonSideColor(() => 'rgba(0,0,0,0)')
+                .polygonStrokeColor(() => 'rgba(129,140,248,0.55)');
+            const mat = globeInstance.globeMaterial();
+            if (mat) { mat.transparent = true; mat.opacity = 0.24; if (mat.color) mat.color.set('#312e81'); if (mat.emissive) mat.emissive.set('#1e1b4b'); }
+            modeTransparentBtn.classList.add('active');
+            modeSatelliteBtn.classList.remove('active');
+        }
+        function applySatelliteMode() {
+            if (!globeInstance) return;
+            globeMode = 'satellite';
+            globeInstance.globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+                .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+                .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+                .polygonCapColor(() => 'rgba(0,0,0,0)')
+                .polygonSideColor(() => 'rgba(0,0,0,0)')
+                .polygonStrokeColor(() => 'rgba(255,255,255,0.28)');
+            const mat = globeInstance.globeMaterial();
+            if (mat) { mat.transparent = false; mat.opacity = 1; if (mat.color) mat.color.set('#ffffff'); if (mat.emissive) mat.emissive.set('#000000'); }
+            modeSatelliteBtn.classList.add('active');
+            modeTransparentBtn.classList.remove('active');
+        }
+        modeTransparentBtn.addEventListener('click', applyTransparentMode);
+        modeSatelliteBtn.addEventListener('click', applySatelliteMode);
+
+        let autoRotating = false;
+        autoRotateBtn.addEventListener('click', () => {
+            if (!globeInstance) return;
+            autoRotating = !autoRotating;
+            const controls = globeInstance.controls();
+            controls.autoRotate = autoRotating;
+            controls.autoRotateSpeed = 0.6;
+            autoRotateBtn.classList.toggle('active', autoRotating);
+        });
+        fullscreenBtn.addEventListener('click', () => {
+            const card = globeViz.closest('.globe-card');
+            if (!document.fullscreenElement) {
+                (card.requestFullscreen || card.webkitRequestFullscreen || function(){}).call(card);
+            } else {
+                (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+            }
+        });
+        document.addEventListener('fullscreenchange', () => setTimeout(sizeGlobe, 150));
+
+        function resetSteps() {
+            [step1, step2, step3].forEach(s => s.classList.remove('active'));
+            step1.classList.add('active');
+        }
+        function activateStep(n) {
+            [step1, step2, step3].forEach(s => s.classList.remove('active'));
+            if (n === 1) step1.classList.add('active');
+            if (n === 2) step2.classList.add('active');
+            if (n === 3) step3.classList.add('active');
+        }
+        function showError(msg) {
+            errorWrap.textContent = msg;
+            errorWrap.classList.add('show');
+            setTimeout(() => errorWrap.classList.remove('show'), 7000);
+        }
+        function hideError() { errorWrap.classList.remove('show'); }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && currentFile && !analyzeBtn.disabled) analyzeBtn.click();
+            if (e.key === 'Escape') clearBtn.click();
+        });
+
+        console.log('%c TREXA SPY v3.0', 'font-size: 28px; font-weight: 900; background: linear-gradient(135deg, #6366f1, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
+        console.log('%cStandalone Client-Side Version - Groq API Direct', 'color: #8a8a9e; font-size: 14px;');
     </script>
 </body>
 </html>
