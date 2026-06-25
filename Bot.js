@@ -14,26 +14,44 @@ const bot = new TelegramBot(TOKEN, { polling: true });
 function loadKeys() {
     try {
         if (fs.existsSync(KEYS_FILE)) {
-            return JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
+            const data = fs.readFileSync(KEYS_FILE, 'utf8');
+            return JSON.parse(data);
         }
-    } catch (e) {}
+    } catch (error) {
+        console.error('Keys dosyası okunamadı:', error.message);
+    }
     return {};
 }
 
 // Key dosyasını kaydet
 function saveKeys(keys) {
-    fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2));
+    try {
+        fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2));
+        return true;
+    } catch (error) {
+        console.error('Keys dosyası kaydedilemedi:', error.message);
+        return false;
+    }
 }
 
-// Key oluştur
+// Key oluştur - formatı düzeltildi
 function generateKey() {
     const prefix = 'TRX';
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = prefix;
+    let groupCount = 0;
+    
     for (let i = 0; i < 24; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
-        if (i % 4 === 3 && i < 23) result += '-';
+        groupCount++;
+        
+        // Her 4 karakterde bir tire ekle (son gruba ekleme)
+        if (groupCount === 4 && i < 23) {
+            result += '-';
+            groupCount = 0;
+        }
     }
+    
     return result;
 }
 
@@ -44,10 +62,14 @@ function getExpiry() {
     return d.toISOString();
 }
 
+// Süre kontrolü - yeni fonksiyon
+function isKeyValid(expiry) {
+    return new Date() < new Date(expiry);
+}
+
 // Ana komutlar
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = String(msg.from.id);
     
     bot.sendMessage(chatId, 
         `🔐 *TREXA SPY Key Sistemi*
@@ -58,6 +80,7 @@ bot.onText(/\/start/, (msg) => {
 /keyolustur - Yeni anahtar oluştur
 /keylerim - Anahtarlarını listele
 /keyiptal ANAHTAR - Anahtar iptal et
+/kontrol ANAHTAR - Anahtar kontrol et
 
 ⚠️ *Not:* Sadece yetkili kişiler key oluşturabilir.`,
         { parse_mode: 'Markdown' }
@@ -90,10 +113,9 @@ bot.onText(/\/keyolustur/, (msg) => {
         active: true
     };
     
-    saveKeys(keys);
-    
-    bot.sendMessage(chatId,
-        `✅ *Yeni Anahtar Oluşturuldu!*
+    if (saveKeys(keys)) {
+        bot.sendMessage(chatId,
+            `✅ *Yeni Anahtar Oluşturuldu!*
 
 🔑 *Anahtar:* \`${key}\`
 📅 *Son Kullanma:* ${new Date(expiry).toLocaleString('tr-TR')}
@@ -101,8 +123,14 @@ bot.onText(/\/keyolustur/, (msg) => {
 
 ⚠️ Bu anahtarı kimseyle paylaşmayın!
 Siteye giriş yapmak için kullanın.`,
-        { parse_mode: 'Markdown' }
-    );
+            { parse_mode: 'Markdown' }
+        );
+    } else {
+        bot.sendMessage(chatId,
+            '❌ Anahtar kaydedilirken bir hata oluştu!',
+            { parse_mode: 'Markdown' }
+        );
+    }
 });
 
 // Key listele
@@ -111,7 +139,7 @@ bot.onText(/\/keylerim/, (msg) => {
     const userId = String(msg.from.id);
     
     if (userId !== ALLOWED_ID) {
-        bot.sendMessage(chatId, '❌ Yetkisiz erişim!', { parse_mode: 'Markdown' });
+        bot.sendMessage(chatId, '❌ *Yetkisiz erişim!*', { parse_mode: 'Markdown' });
         return;
     }
     
@@ -123,15 +151,25 @@ bot.onText(/\/keylerim/, (msg) => {
         return;
     }
     
-    let msg = '📋 *Mevcut Anahtarlar:*\n\n';
+    let message = '📋 *Mevcut Anahtarlar:*\n\n';
+    let activeCount = 0;
+    let expiredCount = 0;
+    
     entries.forEach(([key, data], i) => {
-        const isValid = new Date() < new Date(data.expiry);
+        const isValid = isKeyValid(data.expiry);
         const status = isValid ? '✅ Aktif' : '❌ Süresi doldu';
-        msg += `${i+1}. \`${key}\` - ${status}\n`;
-        msg += `   📅 ${new Date(data.expiry).toLocaleString('tr-TR')}\n`;
+        
+        if (isValid) activeCount++;
+        else expiredCount++;
+        
+        message += `${i+1}. \`${key}\` - ${status}\n`;
+        message += `   📅 ${new Date(data.expiry).toLocaleString('tr-TR')}\n`;
+        message += `   👤 Oluşturan: ${data.createdBy || 'Bilinmiyor'}\n\n`;
     });
     
-    bot.sendMessage(chatId, msg, { parse_mode: 'Markdown' });
+    message += `\n📊 *Özet:* ${activeCount} aktif, ${expiredCount} süresi dolmuş anahtar.`;
+    
+    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
 });
 
 // Key iptal
@@ -141,18 +179,24 @@ bot.onText(/\/keyiptal (.+)/, (msg, match) => {
     const keyToDelete = match[1].trim().toUpperCase();
     
     if (userId !== ALLOWED_ID) {
-        bot.sendMessage(chatId, '❌ Yetkisiz erişim!', { parse_mode: 'Markdown' });
+        bot.sendMessage(chatId, '❌ *Yetkisiz erişim!*', { parse_mode: 'Markdown' });
         return;
     }
     
     const keys = loadKeys();
     if (keys[keyToDelete]) {
         delete keys[keyToDelete];
-        saveKeys(keys);
-        bot.sendMessage(chatId,
-            `✅ \`${keyToDelete}\` anahtarı başarıyla iptal edildi.`,
-            { parse_mode: 'Markdown' }
-        );
+        if (saveKeys(keys)) {
+            bot.sendMessage(chatId,
+                `✅ \`${keyToDelete}\` anahtarı başarıyla iptal edildi.`,
+                { parse_mode: 'Markdown' }
+            );
+        } else {
+            bot.sendMessage(chatId,
+                `❌ Anahtar iptal edilirken bir hata oluştu!`,
+                { parse_mode: 'Markdown' }
+            );
+        }
     } else {
         bot.sendMessage(chatId,
             `❌ \`${keyToDelete}\` anahtarı bulunamadı.`,
@@ -161,21 +205,38 @@ bot.onText(/\/keyiptal (.+)/, (msg, match) => {
     }
 });
 
-// Key kontrol (webhook için)
+// Key kontrol
 bot.onText(/\/kontrol (.+)/, (msg, match) => {
     const chatId = msg.chat.id;
+    const userId = String(msg.from.id);
     const key = match[1].trim().toUpperCase();
+    
+    // Yetki kontrolü - sadece yetkili kullanıcı kontrol edebilir
+    if (userId !== ALLOWED_ID) {
+        bot.sendMessage(chatId, '❌ *Yetkisiz erişim!*', { parse_mode: 'Markdown' });
+        return;
+    }
+    
     const keys = loadKeys();
     
     if (keys[key]) {
         const data = keys[key];
-        const isValid = new Date() < new Date(data.expiry);
+        const isValid = isKeyValid(data.expiry);
+        const timeLeft = new Date(data.expiry) - new Date();
+        const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+        
+        let statusMessage = isValid ? '✅ Aktif' : '❌ Süresi doldu';
+        if (isValid && daysLeft > 0) {
+            statusMessage += ` (${daysLeft} gün kaldı)`;
+        }
+        
         bot.sendMessage(chatId,
             `🔍 *Anahtar Bilgileri:*\n\n` +
             `🔑 Anahtar: \`${key}\`\n` +
             `📅 Oluşturma: ${new Date(data.created).toLocaleString('tr-TR')}\n` +
             `📅 Son Kullanma: ${new Date(data.expiry).toLocaleString('tr-TR')}\n` +
-            `📊 Durum: ${isValid ? '✅ Aktif' : '❌ Süresi doldu'}`,
+            `👤 Oluşturan: ${data.createdBy || 'Bilinmiyor'}\n` +
+            `📊 Durum: ${statusMessage}`,
             { parse_mode: 'Markdown' }
         );
     } else {
@@ -183,6 +244,22 @@ bot.onText(/\/kontrol (.+)/, (msg, match) => {
     }
 });
 
+// Hata yakalama
+bot.on('error', (error) => {
+    console.error('Bot hatası:', error.message);
+});
+
+// Polling hatalarını yakala
+bot.on('polling_error', (error) => {
+    console.error('Polling hatası:', error.message);
+});
+
 console.log('🤖 TREXA SPY Bot çalışıyor...');
 console.log('📌 Yetkili ID:', ALLOWED_ID);
-console.log('💡 Komutlar: /start, /keyolustur, /keylerim, /keyiptal ANAHTAR, /kontrol ANAHTAR');
+console.log('💡 Komutlar:');
+console.log('   /start - Başlangıç mesajı');
+console.log('   /keyolustur - Yeni anahtar oluştur');
+console.log('   /keylerim - Anahtarları listele');
+console.log('   /keyiptal ANAHTAR - Anahtar iptal et');
+console.log('   /kontrol ANAHTAR - Anahtar kontrol et');
+console.log('📁 Keys dosyası:', KEYS_FILE);
