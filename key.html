@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREXA SPY - AI Konum Dedektifi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #050508;
+            color: #f0f0f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 500px;
+            width: 90%;
+            padding: 40px 30px;
+            background: #0c0c14;
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 32px;
+            box-shadow: 0 0 80px rgba(99,102,241,0.05);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo p {
+            color: #8a8a9e;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #8a8a9e;
+            margin-bottom: 6px;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0a0a12;
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px;
+            color: #f0f0f5;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+            font-family: monospace;
+        }
+        .input-group input:focus, .input-group textarea:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #6366f1, #22d3ee);
+            color: white;
+            margin-top: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(99,102,241,0.35);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.04);
+            margin-top: 4px;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .btn-danger {
+            background: rgba(248,113,113,0.08);
+            color: #f87171;
+            border: 1px solid rgba(248,113,113,0.12);
+        }
+        .btn-danger:hover {
+            background: rgba(248,113,113,0.15);
+        }
+        .output {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: #0a0a12;
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px;
+            min-height: 60px;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #8a8a9e;
+            font-family: monospace;
+        }
+        .output.success {
+            border-color: rgba(52,211,153,0.2);
+            color: #34d399;
+        }
+        .output.error {
+            border-color: rgba(248,113,113,0.2);
+            color: #f87171;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            margin: 24px 0;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(99,102,241,0.04);
+            border: 1px solid rgba(99,102,241,0.08);
+            border-radius: 10px;
+            font-size: 12px;
+            color: #8a8a9e;
+        }
+        .status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        .dot-active { background: #34d399; }
+        .dot-inactive { background: #f87171; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .key-list {
+            margin-top: 12px;
+        }
+        .key-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        .key-item .status-badge {
+            padding: 2px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 600;
+            font-family: system-ui;
+        }
+        .badge-active { background: rgba(52,211,153,0.1); color: #34d399; }
+        .badge-expired { background: rgba(248,113,113,0.1); color: #f87171; }
+        .key-item .delete-btn {
+            background: none;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+        }
+        .key-item .delete-btn:hover { color: #ef4444; }
+        .copy-btn {
+            background: rgba(255,255,255,0.04);
+            border: none;
+            color: #8a8a9e;
+            padding: 2px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.08); color: #f0f0f5; }
+        .bot-commands {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        .cmd-btn {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 8px;
+            color: #8a8a9e;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+        .cmd-btn:hover {
+            background: rgba(99,102,241,0.08);
+            border-color: rgba(99,102,241,0.15);
+            color: #f0f0f5;
+        }
+        .cmd-btn.active {
+            background: rgba(99,102,241,0.12);
+            border-color: rgba(99,102,241,0.2);
+            color: #818cf8;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <h1>🔐 TREXA SPY</h1>
+        <p>Bot ile Key Yönetim Sistemi</p>
+    </div>
+
+    <!-- Status -->
+    <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Bot hazır • Anahtar almak için komut kullan</span>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Bot Komutları -->
+    <div style="margin-bottom: 12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:600; color:#8a8a9e;">🤖 Bot Komutları</span>
+            <span style="font-size:11px; color:#4a4a5e;">Yetkili: 8883765968</span>
+        </div>
+        <div class="bot-commands">
+            <button class="cmd-btn active" onclick="runCommand('/keyolustur')">/keyolustur</button>
+            <button class="cmd-btn" onclick="runCommand('/keylerim')">/keylerim</button>
+            <button class="cmd-btn" onclick="runCommand('/keyiptal')">/keyiptal</button>
+            <button class="cmd-btn" onclick="document.getElementById('customCmd').classList.toggle('hidden')">🔧 Özel</button>
+        </div>
+        <div id="customCmd" class="hidden" style="margin-top:8px; display:flex; gap:6px;">
+            <input type="text" id="customCmdInput" placeholder="/komut" style="flex:1; padding:8px 12px; background:#0a0a12; border:1px solid rgba(255,255,255,0.04); border-radius:8px; color:#f0f0f5; font-family:monospace; font-size:12px; outline:none;">
+            <button class="cmd-btn" onclick="runCommand(document.getElementById('customCmdInput').value)">▶</button>
+        </div>
+    </div>
+
+    <!-- Çıktı -->
+    <div class="output" id="output">💬 Bot komutlarını dene...</div>
+
+    <hr class="divider">
+
+    <!-- Key Listesi -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:13px; font-weight:600; color:#8a8a9e;">📋 Anahtarlar</span>
+        <button class="copy-btn" onclick="refreshKeys()">🔄 Yenile</button>
+    </div>
+    <div id="keyList" class="key-list"></div>
+
+    <hr class="divider">
+
+    <!-- Site Girişi -->
+    <div style="margin-top:8px;">
+        <div style="font-size:13px; font-weight:600; color:#8a8a9e; margin-bottom:8px;">🔑 Siteye Giriş Yap</div>
+        <div style="display:flex; gap:6px;">
+            <input type="text" id="loginKeyInput" placeholder="Anahtarı yapıştır..." style="flex:1; padding:10px 14px; background:#0a0a12; border:1px solid rgba(255,255,255,0.04); border-radius:10px; color:#f0f0f5; font-family:monospace; font-size:13px; outline:none;">
+            <button onclick="loginToSite()" style="padding:10px 20px; background:linear-gradient(135deg, #6366f1, #22d3ee); border:none; border-radius:10px; color:white; font-weight:600; cursor:pointer;">Giriş</button>
+        </div>
+        <div id="loginResult" style="margin-top:6px; font-size:12px; color:#8a8a9e;"></div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Admin Panel -->
+    <div style="margin-top:4px;">
+        <details style="cursor:pointer;">
+            <summary style="color:#4a4a5e; font-size:12px;">⚙️ Admin Paneli (sadece yetkili)</summary>
+            <div style="margin-top:12px;">
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="btn btn-secondary" style="flex:1; min-width:100px;" onclick="adminCreateKey()">➕ Key Oluştur</button>
+                    <button class="btn btn-secondary" style="flex:1; min-width:100px;" onclick="adminListKeys()">📋 Listele</button>
+                    <button class="btn btn-danger" style="flex:1; min-width:100px;" onclick="adminDeleteKey()">🗑️ Key Sil</button>
+                    <button class="btn btn-danger" style="flex:1; min-width:100px;" onclick="adminClearAll()">🧹 Tümünü Sil</button>
+                </div>
+                <div id="adminResult" style="margin-top:8px; font-size:12px; color:#8a8a9e;"></div>
+            </div>
+        </details>
+    </div>
+</div>
+
+<script>
+// ===== KONFIG =====
+const ALLOWED_ID = '8883765968';
+const STORAGE_KEY = 'trexaspy_keys';
+
+// ===== KEY İŞLEMLERİ =====
+function loadKeys() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch { return {}; }
+}
+
+function saveKeys(keys) {
+    localStorage
