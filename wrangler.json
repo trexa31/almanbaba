@@ -1,17 +1,12 @@
 {
+  "name": "almanbaba",
+  "main": "index.js",
+  "compatibility_date": "2024-01-01",
   "observability": {
-    "enabled": false,
-    "head_sampling_rate": 1,
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "invocation_logs": true
-    },
-    "traces": {
-      "enabled": false,
-      "persist": true,
-      "head_sampling_rate": 1
-    }
+    "enabled": false
+  },
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
   }
 }
